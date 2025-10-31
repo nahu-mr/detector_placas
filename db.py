@@ -108,10 +108,21 @@ def registrar_autorizada(placa, propietario):
     """, (placa.upper(), propietario))
     conn.commit()
     cur.close(); conn.close()
+    
+    
 def obtener_registradas():
     conn = conectar_db()
     cur = conn.cursor()
     cur.execute("SELECT id, placa, propietario, activo FROM registradas")
+    data = cur.fetchall()
+    cur.close()
+    conn.close()
+    return data
+
+def obtener_movimientos():
+    conn = conectar_db()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT id, placa, entrada_ts, salida_ts, monto, procesada FROM entradas ORDER BY id ASC")
     data = cur.fetchall()
     cur.close()
     conn.close()
