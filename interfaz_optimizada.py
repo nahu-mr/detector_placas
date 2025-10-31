@@ -12,7 +12,8 @@ from db import (
     registrar_salida,
     registrar_autorizada,
     puede_procesar_placa,
-    obtener_registradas
+    obtener_registradas,
+    obtener_movimientos 
 )
 from detector import detectar_placas
 
@@ -94,7 +95,7 @@ for col in cols_mov:
 tree_mov.pack(fill="both", expand=True, pady=5)
 tree_mov_scroll.config(command=tree_mov.yview)
 
-# === MOSTRAR TABLA ACTUAL ===
+# === MOSTRAR TABLA ACTUAL ===def mostrar_tab(tab):
 def mostrar_tab(tab):
     for f in (frame_reg, frame_mov):
         f.pack_forget()
@@ -103,6 +104,7 @@ def mostrar_tab(tab):
         actualizar_tabla_registradas()
     else:
         frame_mov.pack(fill="both", expand=True)
+        actualizar_tabla_movimientos()
 
 # === VARIABLES GLOBALES ===
 cap = None
@@ -211,6 +213,38 @@ def actualizar_tabla_registradas():
     for p in data:
         estado = "✅" if p[3] == 1 else "❌"
         tree_reg.insert("", "end", values=(p[1], p[2], estado))
+        
+
+def actualizar_tabla_movimientos():
+    """Muestra tanto las entradas como las salidas registradas en la base de datos."""
+    for row in tree_mov.get_children():
+        tree_mov.delete(row)
+
+    data = obtener_movimientos()
+    for fila in data:
+        placa = fila["placa"]
+        entrada_ts = fila["entrada_ts"]
+        salida_ts = fila["salida_ts"]
+        monto = fila["monto"]
+        procesada = int(fila["procesada"])
+
+        # Siempre mostrar la ENTRADA
+        if entrada_ts:
+            tree_mov.insert("", "end", values=(
+                placa,
+                "ENTRADA",
+                entrada_ts.strftime("%Y-%m-%d %H:%M:%S"),
+                "-"
+            ))
+
+        # Si hay salida registrada, mostrar también la SALIDA
+        if procesada == 1 and salida_ts:
+            tree_mov.insert("", "end", values=(
+                placa,
+                "SALIDA",
+                salida_ts.strftime("%Y-%m-%d %H:%M:%S"),
+                f"S/{float(monto):.2f}"
+            ))
 
 def cerrar():
     detener_camara()

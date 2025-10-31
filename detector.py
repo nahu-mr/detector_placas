@@ -12,10 +12,8 @@ reader = easyocr.Reader(["en"])  # OCR alfanumérico
 PATRONES_PLACA = [
     # Formato clásico: tres letras y tres números
     r"^(?:PERU\s*)?[A-Z]{3}-\d{3}$",
-    # Variante con dos letras y cuatro números (algunos vehículos especiales)
-    r"^(?:PERU\s*)?[A-Z]{2}-\d{4}$",
     # Formato mixto alfanumérico (como A1A-950, 1AB-234, AB1-456, etc.)
-    r"^(?:PERU\s*)?[A-Z0-9]{3}-\d{3,4}$",
+    r"^(?:PERU\s*)?[A-Z0-9]{3}-\d{3}$",
 ]
 
 def normalizar_texto_placa(texto):
