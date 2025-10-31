@@ -32,4 +32,5 @@ python -m venv .venv
 
 
 pip install --upgrade pip setuptools wheel
+python.exe -m pip install --upgrade pip
 pip install ultralytics easyocr opencv-python pillow
