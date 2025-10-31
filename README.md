@@ -28,7 +28,7 @@ Antes de ejecutar el proyecto, asegúrate de tener **Python 3.10+** y ejecuta lo
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate   # En Windows
+.venv\Scripts\activate 
 
 
 pip install --upgrade pip setuptools wheel
