@@ -235,46 +235,39 @@ def iniciar_camara():
     global cap, after_id
     if cap is None:
         cap = cv2.VideoCapture(0)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+
     ret, frame = cap.read()
     if not ret:
         messagebox.showerror("Error", "No se pudo acceder a la cámara.")
         return
 
+    # 🔹 Detectar placas en el frame actual
     placas = detectar_placas(frame)
+
     if not bloqueado:
         for placa, (x1, y1, x2, y2) in placas:
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255,0), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(frame, placa, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255,0), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
             if puede_procesar_placa(placa) and placa not in placas_en_proceso:
                 placas_en_proceso.add(placa)
                 threading.Thread(target=procesar_placa_async, args=(placa,), daemon=True).start()
 
+    # 🔹 Convertimos a RGB
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    h, w = frame_rgb.shape[:2]
-    w_frame, h_frame = frame_camara.winfo_width(), frame_camara.winfo_height()
-    if w_frame < 10 or h_frame < 10:
-        w_frame, h_frame = 640, 480
 
-    ratio_img = w / h
-    ratio_frame = w_frame / h_frame
-    if ratio_img > ratio_frame:
-        new_w = w_frame
-        new_h = int(w_frame / ratio_img)
-    else:
-        new_h = h_frame
-        new_w = int(h_frame * ratio_img)
+    # 🔹 Redimensionamos SIEMPRE al tamaño fijo deseado
+    frame_rgb = cv2.resize(frame_rgb, (800, 600))  # tamaño fijo
 
-    resized = cv2.resize(frame_rgb, (new_w, new_h))
-    fondo = Image.new("RGB", (w_frame, h_frame), "#ffffff")
-    offset = ((w_frame - new_w) // 2, (h_frame - new_h) // 2)
-    fondo.paste(Image.fromarray(resized), offset)
-
-    img = ImageTk.PhotoImage(fondo)
+    # 🔹 Mostramos la imagen en el Label sin recalcular proporciones
+    img = ImageTk.PhotoImage(Image.fromarray(frame_rgb))
     lmain.imgtk = img
     lmain.configure(image=img, bg="#ffffff")
-    after_id = lmain.after(30, iniciar_camara)
 
+    # 🔹 Actualiza cada 30 ms (≈33 FPS)
+    after_id = lmain.after(30, iniciar_camara)
 def detener_camara():
     global cap, after_id
     if after_id:
