@@ -8,7 +8,7 @@ import time
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "72048052",
+    "password": "12345",
     "database": "control_placas"
 }
 
