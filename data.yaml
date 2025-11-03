@@ -1,5 +1,0 @@
-train: Peru-License-Plate-9/train/images
-val: Peru-License-Plate-9/valid/images
-
-nc: 1
-names: ['license_plate']
