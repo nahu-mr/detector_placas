@@ -6,7 +6,7 @@ import datetime
 import threading
 import db
 from db import (
-    inicializar_tablas, esta_registrada, registrar_entrada,
+    esta_registrada, registrar_entrada,
     registrar_salida, registrar_autorizada, puede_procesar_placa,
     obtener_registradas, obtener_movimientos
 )
@@ -45,6 +45,7 @@ cap = None
 after_id = None
 placas_en_proceso = set()
 bloqueado = False
+mostrando_mensaje = False
 
 # ===============================
 # BARRA SUPERIOR
@@ -235,38 +236,25 @@ def iniciar_camara():
     global cap, after_id
     if cap is None:
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
-
     ret, frame = cap.read()
     if not ret:
-        messagebox.showerror("Error", "No se pudo acceder a la cámara.")
+        messagebox.showerror("Error", "⚠️ No se pudo acceder a la cámara.")
         return
 
-    # 🔹 Detectar placas en el frame actual
     placas = detectar_placas(frame)
+    for placa, (x1, y1, x2, y2) in placas:
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
+        cv2.putText(frame, placa, (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
 
-    if not bloqueado:
-        for placa, (x1, y1, x2, y2) in placas:
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, placa, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            if puede_procesar_placa(placa) and placa not in placas_en_proceso:
-                placas_en_proceso.add(placa)
-                threading.Thread(target=procesar_placa_async, args=(placa,), daemon=True).start()
+        if db.puede_procesar_placa(placa) and placa not in placas_en_proceso:
+            placas_en_proceso.add(placa)
+            threading.Thread(target=procesar_placa_async, args=(placa,), daemon=True).start()
 
-    # 🔹 Convertimos a RGB
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-    # 🔹 Redimensionamos SIEMPRE al tamaño fijo deseado
-    frame_rgb = cv2.resize(frame_rgb, (800, 600))  # tamaño fijo
-
-    # 🔹 Mostramos la imagen en el Label sin recalcular proporciones
     img = ImageTk.PhotoImage(Image.fromarray(frame_rgb))
     lmain.imgtk = img
-    lmain.configure(image=img, bg="#ffffff")
-
-    # 🔹 Actualiza cada 30 ms (≈33 FPS)
+    lmain.configure(image=img)
     after_id = lmain.after(30, iniciar_camara)
 def detener_camara():
     global cap, after_id
@@ -282,23 +270,50 @@ def detener_camara():
 # PROCESAMIENTO DE PLACAS
 # ===============================
 def procesar_placa_async(placa):
-    global bloqueado
-    bloqueado = True
+    """Procesa la placa en un hilo separado para no trabar la GUI"""
+    global mostrando_mensaje
+
+    if mostrando_mensaje:
+        return
+
     try:
-        if esta_registrada(placa):
-            resultado = registrar_salida(placa)
+        if db.esta_registrada(placa):
+            resultado = db.registrar_salida(placa)
+
             if resultado is None:
-                registrar_entrada(placa)
-                root.after(0, lambda: mostrar_info(f"Placa {placa} registrada como ENTRADA.", "Entrada ✅"))
+                # Registrar entrada
+                db.registrar_entrada(placa)
+                root.after(0, lambda: mostrar_info(
+                    f"Placa {placa} registrada como ENTRADA.", "Visto Bueno ✅"
+                ))
+                root.after(0, lambda: tree_mov.insert(
+                    "", "end",
+                    values=(placa, "ENTRADA",
+                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "-")
+                ))
             else:
-                monto = resultado["monto"]
-                duracion = round(resultado["segundos"]/60, 1)
-                root.after(0, lambda: mostrar_info(f"Placa: {placa}\nTiempo: {duracion} min\nMonto: S/{monto}", "Salida 💵"))
+                # Registrar salida
+                monto = resultado['monto']
+                duracion = round(resultado['segundos'] / 60, 1)
+                root.after(0, lambda: mostrar_info(
+                    f"Placa: {placa}\nTiempo: {duracion} min\nMonto: S/{monto}",
+                    "Salida Registrada 💵"
+                ))
+                root.after(0, lambda: tree_mov.insert(
+                    "", "end",
+                    values=(placa, "SALIDA",
+                            resultado['salida'].strftime("%Y-%m-%d %H:%M:%S"),
+                            f"S/{monto:.2f}")
+                ))
+
+            root.after(0, actualizar_tabla_registradas)
+
         else:
-            root.after(0, lambda: mostrar_advertencia(f"La placa {placa} no está registrada."))
+            root.after(0, lambda: mostrar_advertencia(
+                f"La placa {placa} no está registrada."))
     finally:
+        # Permite volver a procesar la placa después de unos segundos
         root.after(5000, lambda: placas_en_proceso.discard(placa))
-        bloqueado = False
 
 # ===============================
 # FUNCIONES DE GESTIÓN
@@ -386,11 +401,14 @@ def eliminar_usuario():
 # ACTUALIZACIÓN DE TABLAS
 # ===============================
 def actualizar_tabla_registradas():
+    """Actualiza la tabla de placas registradas sin mostrar columna 'Activo'."""
     for row in tree_reg.get_children():
         tree_reg.delete(row)
-    for p in obtener_registradas():
-        estado = "✅" if p[3] == 1 else "❌"
-        tree_reg.insert("", "end", values=(p[1], p[2], estado))
+
+    data = db.obtener_registradas()
+    for p in data:
+        # Asumiendo que el orden es: id, placa, propietario, activo
+        tree_reg.insert("", "end", values=(p[1], p[2]))
 
 def actualizar_tabla_movimientos():
     for row in tree_mov.get_children():
@@ -409,11 +427,19 @@ def actualizar_tabla_movimientos():
 # ===============================
 # FUNCIONES DE MENSAJE
 # ===============================
-def mostrar_info(mensaje, titulo="Información"):
-    messagebox.showinfo(titulo, mensaje)
+def mostrar_info(msg, titulo="Info"):
+    global mostrando_mensaje
+    mostrando_mensaje = True
+    messagebox.showinfo(titulo, msg)
+    mostrando_mensaje = False
 
-def mostrar_advertencia(mensaje):
-    messagebox.showwarning("Advertencia", mensaje)
+
+def mostrar_advertencia(msg):
+    global mostrando_mensaje
+    mostrando_mensaje = True
+    messagebox.showwarning("No Autorizado ⛔", msg)
+    mostrando_mensaje = False
+
 
 def cerrar():
     detener_camara()
@@ -422,7 +448,7 @@ def cerrar():
 # ===============================
 # INICIALIZAR BD Y MOSTRAR
 # ===============================
-inicializar_tablas()
+
 ocultar_todos_frames()        # Oculta los otros frames
 frame_camara.pack(fill="both", expand=True, padx=15, pady=15)  # Muestra el frame principal
 root.after(100, mostrar_imagen_inicial)  # Muestra la imagen apenas carga la ventana
