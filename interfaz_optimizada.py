@@ -64,16 +64,17 @@ frame_reg = tk.Frame(frame_tabs, bg="#f0f0f0")
 frame_mov = tk.Frame(frame_tabs, bg="#f0f0f0")
 
 # === TABLA 1: PLACAS REGISTRADAS ===
-cols_reg = ("Placa", "Propietario", "Activo")
+cols_reg = ("Placa", "Propietario")
 tree_reg_scroll = tk.Scrollbar(frame_reg)
 tree_reg_scroll.pack(side=tk.RIGHT, fill="y")
 
 tree_reg = ttk.Treeview(frame_reg, columns=cols_reg, show="headings", height=12, yscrollcommand=tree_reg_scroll.set)
 for col in cols_reg:
     tree_reg.heading(col, text=col)
-    tree_reg.column(col, width=250, anchor="center")
+    tree_reg.column(col, width=300, anchor="center")
 tree_reg.pack(fill="both", expand=True, pady=5)
 tree_reg_scroll.config(command=tree_reg.yview)
+
 
 # === TABLA 2: ENTRADAS / SALIDAS ===
 cols_mov = ("Placa", "Acción", "Fecha", "Monto")
@@ -102,6 +103,7 @@ def mostrar_tab(tab):
 cap = None
 after_id = None
 placas_en_proceso = set()
+mostrando_mensaje = False
 
 # === FUNCIONES DE CÁMARA ===
 def iniciar_camara():
@@ -140,34 +142,72 @@ def detener_camara():
     lmain.configure(image="", bg="black")
 
 # === FUNCIONES DE PROCESAMIENTO EN HILO ===
+# === CONTROL GLOBAL ===
+mostrando_mensaje = False  # 🔒 bloquea procesamiento durante el mensaje
+
+
 def procesar_placa_async(placa):
     """Procesa la placa en un hilo separado para no trabar la GUI"""
+    global mostrando_mensaje
+
+    # Si hay un mensaje abierto, no procesar nuevas placas
+    if mostrando_mensaje:
+        return
+
     try:
         if db.esta_registrada(placa):
             resultado = db.registrar_salida(placa)
+
             if resultado is None:
+                # Registrar entrada
                 db.registrar_entrada(placa)
-                root.after(0, lambda: mostrar_info(f"Placa {placa} registrada como ENTRADA.", "Visto Bueno ✅"))
-                root.after(0, lambda: tree_mov.insert("", "end", values=(placa, "ENTRADA",
-                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "-")))
+                root.after(0, lambda: mostrar_info(
+                    f"Placa {placa} registrada como ENTRADA.", "Visto Bueno ✅"
+                ))
+                root.after(0, lambda: tree_mov.insert(
+                    "", "end",
+                    values=(placa, "ENTRADA",
+                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "-")
+                ))
             else:
+                # Registrar salida
                 monto = resultado['monto']
-                duracion = round(resultado['segundos']/60, 1)
-                root.after(0, lambda: mostrar_info(f"Placa: {placa}\nTiempo: {duracion} min\nMonto: S/{monto}", "Salida Registrada 💵"))
-                root.after(0, lambda: tree_mov.insert("", "end", values=(placa, "SALIDA",
-                    resultado['salida'].strftime("%Y-%m-%d %H:%M:%S"), f"S/{monto:.2f}")))
+                duracion = round(resultado['segundos'] / 60, 1)
+                root.after(0, lambda: mostrar_info(
+                    f"Placa: {placa}\nTiempo: {duracion} min\nMonto: S/{monto}",
+                    "Salida Registrada 💵"
+                ))
+                root.after(0, lambda: tree_mov.insert(
+                    "", "end",
+                    values=(placa, "SALIDA",
+                            resultado['salida'].strftime("%Y-%m-%d %H:%M:%S"),
+                            f"S/{monto:.2f}")
+                ))
+
             root.after(0, actualizar_tabla_registradas)
+
         else:
-            root.after(0, lambda: mostrar_advertencia(f"La placa {placa} no está registrada."))
+            root.after(0, lambda: mostrar_advertencia(
+                f"La placa {placa} no está registrada."))
     finally:
         # Permite volver a procesar la placa después de unos segundos
         root.after(5000, lambda: placas_en_proceso.discard(placa))
 
+
+# === FUNCIONES DE MENSAJE (bloqueo total de procesamiento) ===
 def mostrar_info(msg, titulo="Info"):
+    global mostrando_mensaje
+    mostrando_mensaje = True
     messagebox.showinfo(titulo, msg)
+    mostrando_mensaje = False
+
 
 def mostrar_advertencia(msg):
+    global mostrando_mensaje
+    mostrando_mensaje = True
     messagebox.showwarning("No Autorizado ⛔", msg)
+    mostrando_mensaje = False
+
 
 # === FUNCIONES DE INTERFAZ ===
 def abrir_ventana_agregar_placa():
@@ -199,12 +239,15 @@ def abrir_ventana_agregar_placa():
     tk.Button(ventana, text="Cancelar", command=ventana.destroy, width=12).pack()
 
 def actualizar_tabla_registradas():
+    """Actualiza la tabla de placas registradas sin mostrar columna 'Activo'."""
     for row in tree_reg.get_children():
         tree_reg.delete(row)
+
     data = db.obtener_registradas()
     for p in data:
-        estado = "✅" if p[3] == 1 else "❌"
-        tree_reg.insert("", "end", values=(p[1], p[2], estado))
+        # Asumiendo que el orden es: id, placa, propietario, activo
+        tree_reg.insert("", "end", values=(p[1], p[2]))
+
         
 
 def actualizar_tabla_movimientos():

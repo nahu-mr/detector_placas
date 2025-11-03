@@ -45,7 +45,10 @@ def normalizar_texto_placa(texto):
         reemplazos = {"0": "O", "1": "I", "2": "Z", "5": "S", "8": "B"}
         parte_letras[0] = reemplazos.get(parte_letras[0], parte_letras[0])
 
-    # Posición 2 (puede ser letra o número) → no tocamos
+    # Posición 2 (puede ser letra o número)
+    if parte_letras[1] in ["I"]:
+        reemplazos = {"I": "1"}
+        parte_letras[1] = reemplazos.get(parte_letras[1], parte_letras[1])
 
     # Posición 3 (debe ser letra)
     if parte_letras[2] in ["0", "1", "2", "5", "8"]:
