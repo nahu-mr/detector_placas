@@ -8,49 +8,16 @@ import time
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "72048052",
+    "password": "12345", # Cambiar por la contraseña propia
     "database": "control_placas"
 }
 
 TARIFA_HORA = 5.0   # soles por hora
-COOLDOWN_SEG = 5
-_last_seen = {}
+COOLDOWN_SEG = 5    # segundos de cooldown entre lecturas de la misma placa
+_last_seen = {}     # Diccionario para controlar cooldown
 
 def conectar_db():
     return mysql.connector.connect(**DB_CONFIG)
-
-def inicializar_tablas():
-    conn = conectar_db()
-    cur = conn.cursor()
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS registradas (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        placa VARCHAR(15) UNIQUE NOT NULL,
-        propietario VARCHAR(100),
-        activo TINYINT DEFAULT 1
-    ) ENGINE=InnoDB;
-    """)
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS entradas (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        placa VARCHAR(15) NOT NULL,
-        entrada_ts DATETIME NOT NULL,
-        salida_ts DATETIME NULL,
-        monto DECIMAL(10,2) DEFAULT 0.00,
-        procesada TINYINT DEFAULT 0
-    ) ENGINE=InnoDB;
-    """)
-    # Solo crea el índice si no existe
-    cur.execute("""
-    SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE table_schema = DATABASE() AND table_name='entradas' AND index_name='idx_placa';
-    """)
-    exists = cur.fetchone()[0]
-    if not exists:
-        cur.execute("CREATE INDEX idx_placa ON entradas(placa);")
-    conn.commit()
-    cur.close()
-    conn.close()
 
 def puede_procesar_placa(placa):
     ahora = time.time()
@@ -62,10 +29,12 @@ def puede_procesar_placa(placa):
 def esta_registrada(placa):
     conn = conectar_db()
     cur = conn.cursor()
-    cur.execute("SELECT activo FROM registradas WHERE placa = %s", (placa,))
-    row = cur.fetchone()
-    cur.close(); conn.close()
-    return bool(row and row[0] == 1)
+    cur.execute("SELECT EXISTS(SELECT 1 FROM registradas WHERE placa = %s)", (placa,))
+    existe = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return bool(existe)
+
 
 def registrar_entrada(placa):
     conn = conectar_db()

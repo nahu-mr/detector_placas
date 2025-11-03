@@ -5,17 +5,9 @@ import cv2
 import datetime
 import threading
 
-from db import (
-    inicializar_tablas,
-    esta_registrada,
-    registrar_entrada,
-    registrar_salida,
-    registrar_autorizada,
-    puede_procesar_placa,
-    obtener_registradas,
-    obtener_movimientos 
-)
+import db
 from detector import detectar_placas
+
 
 # === CONFIGURACIÓN DE VENTANA ===
 root = tk.Tk()
@@ -127,7 +119,7 @@ def iniciar_camara():
         cv2.putText(frame, placa, (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2)
 
-        if puede_procesar_placa(placa) and placa not in placas_en_proceso:
+        if db.puede_procesar_placa(placa) and placa not in placas_en_proceso:
             placas_en_proceso.add(placa)
             threading.Thread(target=procesar_placa_async, args=(placa,), daemon=True).start()
 
@@ -151,10 +143,10 @@ def detener_camara():
 def procesar_placa_async(placa):
     """Procesa la placa en un hilo separado para no trabar la GUI"""
     try:
-        if esta_registrada(placa):
-            resultado = registrar_salida(placa)
+        if db.esta_registrada(placa):
+            resultado = db.registrar_salida(placa)
             if resultado is None:
-                registrar_entrada(placa)
+                db.registrar_entrada(placa)
                 root.after(0, lambda: mostrar_info(f"Placa {placa} registrada como ENTRADA.", "Visto Bueno ✅"))
                 root.after(0, lambda: tree_mov.insert("", "end", values=(placa, "ENTRADA",
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "-")))
@@ -198,7 +190,7 @@ def abrir_ventana_agregar_placa():
         if not placa:
             messagebox.showwarning("Error", "Debe ingresar una placa.")
             return
-        registrar_autorizada(placa, prop)
+        db.registrar_autorizada(placa, prop)
         messagebox.showinfo("Guardado ✅", f"Placa {placa} registrada correctamente.")
         ventana.destroy()
         actualizar_tabla_registradas()
@@ -209,7 +201,7 @@ def abrir_ventana_agregar_placa():
 def actualizar_tabla_registradas():
     for row in tree_reg.get_children():
         tree_reg.delete(row)
-    data = obtener_registradas()
+    data = db.obtener_registradas()
     for p in data:
         estado = "✅" if p[3] == 1 else "❌"
         tree_reg.insert("", "end", values=(p[1], p[2], estado))
@@ -220,7 +212,7 @@ def actualizar_tabla_movimientos():
     for row in tree_mov.get_children():
         tree_mov.delete(row)
 
-    data = obtener_movimientos()
+    data = db.obtener_movimientos()
     for fila in data:
         placa = fila["placa"]
         entrada_ts = fila["entrada_ts"]
@@ -251,8 +243,8 @@ def cerrar():
     root.destroy()
 
 # === INICIALIZACIÓN ===
-inicializar_tablas()
-registrar_autorizada("ABC-123", "Juan Pérez")
+
+db.registrar_autorizada("ABC-123", "Juan Pérez")
 mostrar_tab("reg")
 
 root.mainloop()
