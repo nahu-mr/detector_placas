@@ -1,0 +1,64 @@
+# ============================================================
+# 🚗 Proyecto: Sistema de Control Vehicular - Perú
+# Ignorar archivos innecesarios al subir a GitHub
+# ============================================================
+
+# 🧩 Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+*.env
+
+# 🧠 Archivos de configuración locales
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# 🧰 Archivos de compilación o logs
+*.log
+*.pot
+*.mo
+
+# 💾 Archivos temporales o cache
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.swp
+
+# 📦 Librerías descargadas o caches de pip
+pip-wheel-metadata/
+*.egg-info/
+build/
+dist/
+.eggs/
+.installed.cfg
+
+# 🧮 Carpetas de salida o checkpoints
+runs/
+output/
+results/
+weights/
+models/
+
+# 🧱 Archivos de entorno o variables secretas
+.env
+.env.*
+
+# 🧑‍💻 VS Code
+.vscode/
+.history/
+
+# ⚙️ Configuración de sistema o IDEs
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 🚫 Otros archivos personales
+test_*.py
+notes.txt
+temp/
