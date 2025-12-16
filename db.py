@@ -3,16 +3,17 @@ import mysql.connector
 from mysql.connector import Error
 import datetime
 import time
+import math  # ← AGREGADO: necesario para math.ceil()
 
 # Configuración de conexión MySQL (ajusta tus credenciales)
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": "12345",
+    "password": "72048052",
     "database": "control_placas"
 }
 
-TARIFA_HORA = 5.0   # soles por hora
+TARIFA_MINUTO = 0.15   # soles por minuto
 COOLDOWN_SEG = 5
 _last_seen = {}
 
@@ -60,70 +61,140 @@ def puede_procesar_placa(placa):
     return True
 
 def esta_registrada(placa):
-    conn = conectar_db()
-    cur = conn.cursor()
-    cur.execute("SELECT activo FROM registradas WHERE placa = %s", (placa,))
-    row = cur.fetchone()
-    cur.close(); conn.close()
-    return bool(row and row[0] == 1)
+    """Verifica si una placa está registrada en la base de datos"""
+    try:
+        conn = conectar_db()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM registradas WHERE UPPER(TRIM(placa)) = UPPER(TRIM(%s))", (placa,))
+        resultado = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        return resultado > 0
+    except Exception as e:
+        print(f"Error en esta_registrada: {e}")
+        return False
 
 def registrar_entrada(placa):
-    conn = conectar_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM entradas WHERE placa = %s AND procesada = 0", (placa,))
-    if cur.fetchone():
-        cur.close(); conn.close()
+    """Registra una nueva entrada si no hay una activa"""
+    try:
+        conn = conectar_db()
+        cur = conn.cursor()
+        
+        # Verificar si ya hay una entrada sin procesar
+        cur.execute("SELECT id FROM entradas WHERE placa = %s AND procesada = 0", (placa,))
+        if cur.fetchone():
+            cur.close()
+            conn.close()
+            return None
+        
+        # Registrar nueva entrada
+        ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cur.execute("INSERT INTO entradas (placa, entrada_ts, procesada) VALUES (%s, %s, 0)", (placa, ahora))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error en registrar_entrada: {e}")
         return None
-    ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cur.execute("INSERT INTO entradas (placa, entrada_ts) VALUES (%s, %s)", (placa, ahora))
-    conn.commit()
-    cur.close(); conn.close()
-    return True
 
 def registrar_salida(placa):
-    conn = conectar_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT id, entrada_ts FROM entradas WHERE placa = %s AND procesada = 0 ORDER BY id DESC LIMIT 1", (placa,))
-    entrada = cur.fetchone()
-    if not entrada:
-        cur.close(); conn.close()
+    """Registra la salida y calcula el monto a cobrar"""
+    try:
+        conn = conectar_db()
+        cur = conn.cursor(dictionary=True)
+        
+        # Buscar la última entrada sin procesar
+        cur.execute(
+            "SELECT id, entrada_ts FROM entradas WHERE placa = %s AND procesada = 0 ORDER BY id DESC LIMIT 1",
+            (placa,)
+        )
+        
+        entrada = cur.fetchone()
+        if not entrada:
+            cur.close()
+            conn.close()
+            return None
+        
+        # Calcular tiempo y monto
+        entrada_ts = entrada["entrada_ts"]
+        salida_ts = datetime.datetime.now()
+        segundos = (salida_ts - entrada_ts).total_seconds()
+        minutos_reales = segundos / 60
+        minutos_cobrados = math.ceil(minutos_reales)
+        monto = round(minutos_cobrados * TARIFA_MINUTO, 2)
+
+        # Actualizar el registro
+        cur.execute("""
+            UPDATE entradas 
+            SET salida_ts = %s, monto = %s, procesada = 1 
+            WHERE id = %s
+        """, (
+            salida_ts.strftime("%Y-%m-%d %H:%M:%S"),
+            monto,
+            entrada["id"]
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {
+            "placa": placa,
+            "entrada": entrada_ts,
+            "salida": salida_ts,
+            "segundos": segundos,  # ← AGREGADO: necesario para el GUI
+            "minutos_reales": round(minutos_reales, 2),
+            "minutos_cobrados": minutos_cobrados,
+            "monto": monto
+        }
+    except Exception as e:
+        print(f"Error en registrar_salida: {e}")
+        import traceback
+        traceback.print_exc()
         return None
-    entrada_ts = entrada["entrada_ts"]
-    salida_ts = datetime.datetime.now()
-    segundos = (salida_ts - entrada_ts).total_seconds()
-    monto = round((segundos / 3600) * TARIFA_HORA, 2)
-    cur.execute("""
-        UPDATE entradas SET salida_ts = %s, monto = %s, procesada = 1 WHERE id = %s
-    """, (salida_ts.strftime("%Y-%m-%d %H:%M:%S"), monto, entrada["id"]))
-    conn.commit()
-    cur.close(); conn.close()
-    return {"placa": placa, "entrada": entrada_ts, "salida": salida_ts, "monto": monto, "segundos": segundos}
 
 def registrar_autorizada(placa, propietario):
-    conn = conectar_db()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT IGNORE INTO registradas (placa, propietario, activo)
-        VALUES (%s, %s, 1)
-    """, (placa.upper(), propietario))
-    conn.commit()
-    cur.close(); conn.close()
-    
+    """Registra una nueva placa autorizada"""
+    try:
+        conn = conectar_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT IGNORE INTO registradas (placa, propietario, activo)
+            VALUES (%s, %s, 1)
+        """, (placa.upper(), propietario))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error en registrar_autorizada: {e}")
+        return False
     
 def obtener_registradas():
-    conn = conectar_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id, placa, propietario, activo FROM registradas")
-    data = cur.fetchall()
-    cur.close()
-    conn.close()
-    return data
+    """Obtiene todas las placas registradas"""
+    try:
+        conn = conectar_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, placa, propietario, activo FROM registradas")
+        data = cur.fetchall()
+        cur.close()
+        conn.close()
+        return data
+    except Exception as e:
+        print(f"Error en obtener_registradas: {e}")
+        return []
 
 def obtener_movimientos():
-    conn = conectar_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT id, placa, entrada_ts, salida_ts, monto, procesada FROM entradas ORDER BY id ASC")
-    data = cur.fetchall()
-    cur.close()
-    conn.close()
-    return data
+    """Obtiene todos los movimientos (entradas y salidas)"""
+    try:
+        conn = conectar_db()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, placa, entrada_ts, salida_ts, monto, procesada FROM entradas ORDER BY id DESC")
+        data = cur.fetchall()
+        cur.close()
+        conn.close()
+        return data
+    except Exception as e:
+        print(f"Error en obtener_movimientos: {e}")
+        return []
