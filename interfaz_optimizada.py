@@ -5,14 +5,8 @@ import cv2
 import datetime
 import threading
 import time
-import db
-from db import (
-    esta_registrada, registrar_entrada,
-    registrar_salida, registrar_autorizada, puede_procesar_placa,
-    obtener_registradas, obtener_movimientos
-)
 from detector import detectar_placas
-
+import requests
 # CONFIGURACIÓN DE LA VENTANA
 root = tk.Tk()
 root.title("PlateMind - Sistema de Control Vehicular")
@@ -49,6 +43,44 @@ placas_en_proceso = {}
 bloqueado = False
 mostrando_mensaje = False
 lock_procesamiento = threading.Lock()
+API_BASE = "http://127.0.0.1:8000/api"
+
+import requests
+from tkinter import messagebox
+
+API_BASE = "http://127.0.0.1:8000/api"
+
+def api_esta_registrada(placa):
+    placa = placa.strip().upper()
+
+    r = requests.get(f"{API_BASE}/placas/")
+    if r.status_code == 200:
+        return any(p["placa"].strip().upper() == placa for p in r.json())
+    return False
+
+
+def api_registrar_entrada(placa):
+    requests.post(f"{API_BASE}/entrada/", json={"placa": placa})
+
+def api_registrar_salida(placa):
+    r = requests.post(f"{API_BASE}/salida/", json={"placa": placa})
+    if r.status_code == 200:
+        return r.json()
+    return None
+
+def api_registrar_autorizada(placa, propietario):
+    requests.post(
+        f"{API_BASE}/placas/",
+        json={"placa": placa, "propietario": propietario}
+    )
+
+def api_obtener_registradas():
+    r = requests.get(f"{API_BASE}/placas/")
+    return r.json() if r.status_code == 200 else []
+
+def api_obtener_movimientos():
+    r = requests.get(f"{API_BASE}/movimientos/")
+    return r.json() if r.status_code == 200 else []
 
 # ===============================
 # BARRA SUPERIOR CON GRADIENTE
@@ -420,6 +452,7 @@ def limpiar_placas_antiguas():
 # ===============================
 # CÁMARA Y PROCESAMIENTO
 # ===============================
+
 def iniciar_camara():
     global cap, after_id
     if cap is None:
@@ -484,15 +517,16 @@ def procesar_placa_async(placa):
         return
 
     try:
-        if not db.esta_registrada(placa):
+        if not api_esta_registrada(placa):
             root.after(0, lambda: mostrar_advertencia(
                 f"La placa {placa} no está registrada en el sistema."))
             return
 
-        resultado = db.registrar_salida(placa)
+        resultado = api_registrar_salida(placa)
+
 
         if resultado is None:
-            db.registrar_entrada(placa)
+            api_registrar_entrada(placa)
             root.after(0, lambda: mostrar_info(
                 f"✅ Placa: {placa}\n\nRegistrada como ENTRADA\n\nFecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", 
                 "Entrada Registrada"
@@ -581,7 +615,7 @@ def abrir_ventana_agregar_placa():
         if not placa:
             messagebox.showwarning("Advertencia", "Debe ingresar una placa válida.")
             return
-        registrar_autorizada(placa, prop if prop else "Sin especificar")
+        api_registrar_autorizada(placa, prop if prop else "Sin especificar")
         messagebox.showinfo("Éxito", f"✅ Placa {placa} registrada correctamente.")
         ventana.destroy()
         mostrar_seccion("reg")
@@ -617,20 +651,13 @@ def abrir_ventana_agregar_placa():
 
 def eliminar_todos_movimientos():
     ocultar_todos_frames()
-    if messagebox.askyesno("Confirmar", "⚠️ ¿Está seguro de eliminar TODOS los movimientos?\n\nEsta acción no se puede deshacer."):
-        try:
-            conn = db.conectar_db()
-            cur = conn.cursor()
-            cur.execute("DELETE FROM entradas")
-            conn.commit()
-            cur.close()
-            conn.close()
-            messagebox.showinfo("Éxito", "✅ Todos los movimientos han sido eliminados.")
+    if messagebox.askyesno("Confirmar", "⚠️ ¿Eliminar todos los movimientos?"):
+        r = requests.delete(f"{API_BASE}/movimientos/")
+        if r.status_code == 200:
+            messagebox.showinfo("Éxito", "Movimientos eliminados.")
             mostrar_seccion("mov")
-        except Exception as e:
-            messagebox.showerror("Error", f"No se pudieron eliminar los movimientos:\n{e}")
-    else:
-        mostrar_seccion("mov")
+        else:
+            messagebox.showerror("Error", "No se pudo eliminar.")
 
 def eliminar_usuario():
     ocultar_todos_frames()
@@ -682,21 +709,18 @@ def eliminar_usuario():
         if not placa:
             messagebox.showwarning("Advertencia", "Debe ingresar una placa válida.")
             return
+
         try:
-            conn = db.conectar_db()
-            cur = conn.cursor()
-            cur.execute("DELETE FROM registradas WHERE placa = %s", (placa,))
-            conn.commit()
-            if cur.rowcount > 0:
+            r = requests.delete(f"{API_BASE}/placas/{placa}/")
+            if r.status_code == 200:
                 messagebox.showinfo("Éxito", f"✅ Usuario con placa {placa} eliminado.")
+                ventana.destroy()
+                mostrar_seccion("reg")
             else:
                 messagebox.showwarning("Aviso", f"No se encontró la placa {placa}.")
-            cur.close()
-            conn.close()
-            ventana.destroy()
-            mostrar_seccion("reg")
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo eliminar:\n{e}")
+
 
     frame_botones = tk.Frame(ventana, bg=COLOR_PANEL)
     frame_botones.pack(pady=15)
@@ -731,17 +755,68 @@ def eliminar_usuario():
 # ACTUALIZACIÓN DE TABLAS
 # ===============================
 def actualizar_tabla_registradas():
+    """Actualiza la tabla de placas registradas"""
+    try:
+        # Limpiar tabla
+        for row in tree_reg.get_children():
+            tree_reg.delete(row)
+
+        # Obtener datos
+        data = api_obtener_registradas()
+        print(f"📋 Datos recibidos de placas: {data}")  # Debug
+        
+        # Insertar cada placa
+        for p in data:
+            placa = p.get("placa", "N/A")
+            propietario = p.get("propietario", "Sin especificar")
+            tree_reg.insert("", "end", values=(placa, propietario))
+        
+        print(f"✅ Tabla actualizada con {len(data)} placas")
+        
+    except Exception as e:
+        print(f"❌ Error al actualizar tabla de registradas: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def actualizar_tabla_movimientos():
+    """Actualiza la tabla de movimientos"""
+    try:
+        # Limpiar tabla
+        for row in tree_mov.get_children():
+            tree_mov.delete(row)
+
+        # Obtener datos
+        data = api_obtener_movimientos()
+        print(f"📊 Datos recibidos de movimientos: {data}")  # Debug
+        
+        # Insertar cada movimiento
+        for mov in data:
+            placa = mov.get("placa", "N/A")
+            accion = mov.get("accion", "N/A")
+            fecha = mov.get("fecha", "N/A")
+            monto = mov.get("monto", "-")
+            
+            tree_mov.insert("", "end", values=(placa, accion, fecha, monto))
+        
+        print(f"✅ Tabla actualizada con {len(data)} movimientos")
+        
+    except Exception as e:
+        print(f"❌ Error al actualizar tabla de movimientos: {e}")
+        import traceback
+        traceback.print_exc()
+"""def actualizar_tabla_registradas():
     for row in tree_reg.get_children():
         tree_reg.delete(row)
 
-    data = db.obtener_registradas()
+    data = api_obtener_registradas()
     for p in data:
         tree_reg.insert("", "end", values=(p[1], p[2]))
 
 def actualizar_tabla_movimientos():
     for row in tree_mov.get_children():
         tree_mov.delete(row)
-    for fila in db.obtener_movimientos():
+    for fila in api_obtener_movimientos():
         placa = fila["placa"]
         entrada_ts = fila["entrada_ts"]
         salida_ts = fila["salida_ts"]
@@ -751,7 +826,7 @@ def actualizar_tabla_movimientos():
             tree_mov.insert("", "end", values=(placa, "ENTRADA", entrada_ts.strftime("%d/%m/%Y %H:%M:%S"), "-"))
         if procesada == 1 and salida_ts:
             tree_mov.insert("", "end", values=(placa, "SALIDA", salida_ts.strftime("%d/%m/%Y %H:%M:%S"), f"S/ {float(monto):.2f}"))
-
+"""
 def mostrar_info(msg, titulo="Información"):
     global mostrando_mensaje
     mostrando_mensaje = True
