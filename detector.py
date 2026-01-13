@@ -2,9 +2,14 @@
 from ultralytics import YOLO
 import easyocr
 import re #modulo para trabajar con expresiones regulares - patrones de placas
+import os
+
+# Obtener la ruta del directorio donde está detector.py
+DETECTOR_DIR = os.path.dirname(os.path.abspath(__file__))
+BEST_PT_PATH = os.path.join(DETECTOR_DIR, 'best.pt')
 
 # Carga modelo y OCR solo una vez al inicio
-model = YOLO("best.pt")
+model = YOLO(BEST_PT_PATH)
 reader = easyocr.Reader(["en"])  # OCR alfanumérico
 
 # Patrones válidos de placas peruanas

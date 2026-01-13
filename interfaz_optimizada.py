@@ -40,6 +40,7 @@ FUENTE_SUBTITULO = ("Segoe UI", 14, "bold")
 cap = None
 after_id = None
 placas_en_proceso = {}
+placas_tiempo_entrada = {}  # Rastrear cuándo se registró cada entrada
 bloqueado = False
 mostrando_mensaje = False
 lock_procesamiento = threading.Lock()
@@ -524,9 +525,13 @@ def procesar_placa_async(placa):
 
         resultado = api_registrar_salida(placa)
 
-
         if resultado is None:
+            # Nueva entrada
             api_registrar_entrada(placa)
+            
+            # Rastrear tiempo de entrada (para retraso de 3 segundos)
+            placas_tiempo_entrada[placa] = time.time()
+            
             root.after(0, lambda: mostrar_info(
                 f"✅ Placa: {placa}\n\nRegistrada como ENTRADA\n\nFecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", 
                 "Entrada Registrada"
@@ -537,8 +542,28 @@ def procesar_placa_async(placa):
                         datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"), "-")
             ))
         else:
+            # VERIFICAR SI HAN PASADO AL MENOS 3 SEGUNDOS DESDE LA ENTRADA
+            tiempo_entrada = placas_tiempo_entrada.get(placa)
+            if tiempo_entrada is None:
+                # Si no hay registro de tiempo, permitir salida
+                print(f"⏳ Placa {placa} sin registro de tiempo de entrada. Permitiendo salida.")
+                tiempo_entrada = time.time()
+            
+            tiempo_transcurrido = time.time() - tiempo_entrada
+            
+            # Si han pasado menos de 3 segundos, no procesar salida
+            if tiempo_transcurrido < 3:
+                print(f"⏳ Placa {placa} detectada de nuevo pero muy rápido ({tiempo_transcurrido:.1f}s). Esperando 3s mínimo.")
+                return
+            
+            # Proceder con la salida
             monto = resultado['monto']
             duracion = round(resultado['segundos'] / 60, 1)
+            
+            # Limpiar del diccionario de rastreo
+            if placa in placas_tiempo_entrada:
+                del placas_tiempo_entrada[placa]
+            
             root.after(0, lambda: mostrar_info(
                 f"💰 COBRO GENERADO\n\nPlaca: {placa}\nTiempo: {duracion} minutos\nMonto: S/ {monto:.2f}", 
                 "Salida Registrada"
