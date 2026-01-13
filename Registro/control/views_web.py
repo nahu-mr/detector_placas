@@ -340,4 +340,18 @@ def registrar_salida(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@require_http_methods(["DELETE"])
+@csrf_exempt
+def clear_movimientos(request):
+    """Eliminar todos los movimientos de la tabla Entrada"""
+    try:
+        count, _ = Entrada.objects.all().delete()
+        return JsonResponse({
+            'success': True,
+            'message': f'Se eliminaron {count} movimientos',
+            'count': count
+        }, status=200)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 

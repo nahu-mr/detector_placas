@@ -8,7 +8,7 @@ from .views import (
 )
 from .views_web import (
     dashboard, get_placas, get_movimientos, add_placa, delete_placa, 
-    video_feed, iniciar_streaming, detener_streaming, notificaciones_stream
+    video_feed, iniciar_streaming, detener_streaming, notificaciones_stream, clear_movimientos
 )
 
 urlpatterns = [
@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/web/movimientos/", get_movimientos, name="api_movimientos"),
     path("api/web/add-placa/", add_placa, name="add_placa"),
     path("api/web/delete-placa/<str:placa>/", delete_placa, name="delete_placa_web"),
+    path("api/web/clear-movimientos/", clear_movimientos, name="clear_movimientos"),
     
     # Video streaming
     path("video/", video_feed, name="video_feed"),

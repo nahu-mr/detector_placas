@@ -745,7 +745,23 @@
         function limpiarMovimientos() {
             detenerCamara();
             if (!confirm('¿Está seguro de eliminar todos los movimientos?')) return;
-            alert('❌ Funcionalidad en desarrollo');
+            
+            fetch(`${API_BASE}/web/clear-movimientos/`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ ${data.message}`);
+                    cargarMovimientos();  // Recargar la tabla
+                } else {
+                    alert('❌ Error al eliminar movimientos');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Error al eliminar movimientos');
+            });
         }
 
         function salirSistema() {
