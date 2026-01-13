@@ -18,3 +18,4 @@ class Entrada(models.Model):
 
     def __str__(self):
         return f"{self.placa} - {self.entrada.strftime('%d/%m/%Y %H:%M:%S')}"
+

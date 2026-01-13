@@ -69,6 +69,7 @@ def api_registrar_salida(placa):
         return r.json()
     return None
 
+
 def api_registrar_autorizada(placa, propietario):
     requests.post(
         f"{API_BASE}/placas/",
@@ -519,8 +520,19 @@ def procesar_placa_async(placa):
 
     try:
         if not api_esta_registrada(placa):
-            root.after(0, lambda: mostrar_advertencia(
-                f"La placa {placa} no está registrada en el sistema."))
+            # Placa NO registrada - mostrar alerta SOLO UNA VEZ cada 3 segundos
+            tiempo_actual = time.time()
+            tiempo_registrado = placas_en_proceso.get(placa)
+            
+            if tiempo_registrado is None:
+                # Primera vez que ve esta placa desconocida - mostrar alerta
+                with lock_procesamiento:
+                    placas_en_proceso[placa] = tiempo_actual
+                
+                root.after(0, lambda: mostrar_advertencia(
+                    f"La placa {placa} no está registrada en el sistema."))
+            
+            # No hacer más nada - ignorar las re-detecciones durante 3 segundos
             return
 
         resultado = api_registrar_salida(placa)
@@ -528,6 +540,7 @@ def procesar_placa_async(placa):
         if resultado is None:
             # Nueva entrada
             api_registrar_entrada(placa)
+
             
             # Rastrear tiempo de entrada (para retraso de 3 segundos)
             placas_tiempo_entrada[placa] = time.time()

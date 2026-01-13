@@ -80,6 +80,7 @@ def add_placa(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @require_http_methods(["DELETE"])
+@csrf_exempt
 def delete_placa(request, placa):
     """Eliminar una placa"""
     try:
@@ -338,3 +339,5 @@ def registrar_salida(request):
         }, status=200)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+

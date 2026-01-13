@@ -186,3 +186,5 @@ def listar_movimientos(request):
             print(f"❌ Error al eliminar movimientos: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
+
+
