@@ -435,18 +435,18 @@
             <div class="menu-titulo">Menú de Control</div>
             <div class="separador"></div>
 
-            <button class="boton-menu" onclick="mostrarSeccion('camara')">📹 Encender Cámara</button>
-            <button class="boton-menu" onclick="abrirModalAgregar()">➕ Agregar Placa</button>
-            <button class="boton-menu" onclick="mostrarSeccion('placas')">📋 Placas Registradas</button>
-            <button class="boton-menu" onclick="mostrarSeccion('movimientos')">📊 Entradas / Salidas</button>
+            <button class="boton-menu" onclick="mostrarSeccion('camara')">ENCENDER CÁMARA</button>
+            <button class="boton-menu" onclick="detenerCamara();abrirModalAgregar()">AGREGAR PLACA</button>
+            <button class="boton-menu" onclick="detenerCamara();mostrarSeccion('placas')">PLACAS REGISTRADAS</button>
+            <button class="boton-menu" onclick="detenerCamara();mostrarSeccion('movimientos')">ENTRADAS / SALIDAS</button>
 
             <div class="separador"></div>
 
-            <button class="boton-menu" onclick="detenerCamara()">⏹ Detener Cámara</button>
-            <button class="boton-menu" onclick="limpiarMovimientos()">🗑 Eliminar Movimientos</button>
+            <button class="boton-menu" onclick="detenerCamara()">Detener Cámara</button>
+            <button class="boton-menu" onclick="detenerCamara();limpiarMovimientos()">Eliminar Movimientos</button>
 
             <div style="margin-top: auto;"></div>
-            <button class="boton-salir" onclick="salirSistema()">🚪 SALIR DEL SISTEMA</button>
+            
         </div>
 
         <!-- Panel Derecho -->
@@ -454,7 +454,7 @@
             <!-- Sección Cámara -->
             <div id="seccion-camara" class="seccion activa">
                 <div class="contenedor-tarjeta">
-                    <h2 class="titulo-seccion">📹 Cámara</h2>
+                    <h2 class="titulo-seccion">Cámara</h2>
                     <div class="contenedor-camara">
                         <img id="video-stream" src="" alt="Stream de cámara">
                         <div class="estado-camara" id="estado-camara">● Estado: Cámara apagada</div>
@@ -465,7 +465,7 @@
             <!-- Sección Placas Registradas -->
             <div id="seccion-placas" class="seccion">
                 <div class="contenedor-tarjeta">
-                    <h2 class="titulo-seccion">📋 Placas Autorizadas</h2>
+                    <h2 class="titulo-seccion">Placas Autorizadas</h2>
                     <div class="tabla-contenedor">
                         <table>
                             <thead>
@@ -488,7 +488,7 @@
             <!-- Sección Movimientos -->
             <div id="seccion-movimientos" class="seccion">
                 <div class="contenedor-tarjeta">
-                    <h2 class="titulo-seccion">📊 Registro de Movimientos</h2>
+                    <h2 class="titulo-seccion">Registro de Movimientos</h2>
                     <div class="tabla-contenedor">
                         <table>
                             <thead>
@@ -514,7 +514,7 @@
     <!-- Modal Agregar Placa -->
     <div id="modal-agregar" class="modal">
         <div class="modal-contenido">
-            <h2 class="modal-titulo">➕ Registrar Nueva Placa</h2>
+            <h2 class="modal-titulo">Registrar Nueva Placa</h2>
             <form onsubmit="guardarPlaca(event)">
                 <div class="form-group">
                     <label>Número de Placa:</label>
@@ -551,6 +551,7 @@
 
         // Mostrar/ocultar secciones
         function mostrarSeccion(seccion) {
+            
             document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
             
             const secciones = {
@@ -643,12 +644,12 @@
                 });
                 
                 if (response.ok) {
-                    alert(`✅ Placa ${placa} registrada correctamente.`);
+                    alert(`Placa ${placa} registrada correctamente.`);
                     cerrarModal();
                     cargarPlacas();
                 } else {
                     const error = await response.json();
-                    alert(`❌ Error: ${error.error}`);
+                    alert(`Error: ${error.error}`);
                 }
             } catch (error) {
                 alert(`Error: ${error}`);
@@ -665,10 +666,10 @@
                 });
                 
                 if (response.ok) {
-                    alert(`✅ Placa ${placa} eliminada.`);
+                    alert(`Placa ${placa} eliminada.`);
                     cargarPlacas();
                 } else {
-                    alert('❌ Error al eliminar placa');
+                    alert('Error al eliminar placa');
                 }
             } catch (error) {
                 alert(`Error: ${error}`);
@@ -708,11 +709,11 @@
                 estadoCamara.classList.add('activa');
                 estadoCamara.classList.remove('error');
                 
-                console.log('✅ Cámara iniciada - Mostrando stream MJPEG');
+                console.log('Cámara iniciada - Mostrando stream MJPEG');
                 
             } catch (error) {
                 console.error('Error iniciando cámara:', error);
-                estadoCamara.textContent = '● Estado: Error - ' + error.message;
+                estadoCamara.textContent = 'Estado: Error - ' + error.message;
                 estadoCamara.classList.add('error');
                 estadoCamara.classList.remove('activa');
             }
@@ -731,10 +732,10 @@
                 // Limpiar la imagen
                 imgStream.src = '';
                 
-                estadoCamara.textContent = '● Estado: Cámara apagada';
+                estadoCamara.textContent = 'Estado: Cámara apagada';
                 estadoCamara.classList.remove('activa', 'error');
                 
-                console.log('✅ Cámara detenida');
+                console.log('Cámara detenida');
                 
             } catch (error) {
                 console.error('Error deteniendo cámara:', error);
@@ -742,6 +743,7 @@
         }
 
         function limpiarMovimientos() {
+            detenerCamara();
             if (!confirm('¿Está seguro de eliminar todos los movimientos?')) return;
             alert('❌ Funcionalidad en desarrollo');
         }
@@ -765,7 +767,7 @@
             
             switch(tipo) {
                 case 'entrada':
-                    titulo = '✅ ENTRADA REGISTRADA';
+                    titulo = 'ENTRADA REGISTRADA';
                     color = '#6BBF59';
                     icono = '✅';
                     break;
