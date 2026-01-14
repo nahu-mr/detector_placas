@@ -13,19 +13,19 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #F7F7F7;
-            color: #2E2E2E;
+            background-color: #f0f4f9;
+            color: #1a202c;
         }
 
         /* Barra Superior */
         .barra-superior {
-            background-color: #0f4c75;
+            background-color: #1e40af;
             color: white;
             padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .titulo-principal h1 {
@@ -79,8 +79,8 @@
         }
 
         .separador {
-            height: 2px;
-            background-color: #0f4c75;
+            height: 1px;
+            background-color: #3b82f6;
             margin: 20px 0;
         }
 
@@ -88,43 +88,43 @@
             width: 100%;
             padding: 20px;
             margin: 10px 0;
-            background-color: #D9B44A;
-            color: #2E2E2E;
-            border: none;
-            border-radius: 5px;
+            background-color: #e0f2fe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease;
             text-align: left;
         }
 
         .boton-menu:hover {
-            background-color: #E6C866;
+            background-color: #bae6fd;
         }
 
         .boton-salir {
             width: 100%;
             padding: 20px;
             margin-top: 20px;
-            background-color: #E57373;
-            color: #2E2E2E;
+            background-color: #ef4444;
+            color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease;
         }
 
         .boton-salir:hover {
-            background-color: #ff5252;
+            background-color: #dc2626;
         }
 
         /* Panel Derecho */
         .panel-derecho {
             flex: 1;
-            background-color: #F7F7F7;
+            background-color: #f0f4f9;
             overflow-y: auto;
             padding: 30px;
         }
@@ -156,39 +156,97 @@
             letter-spacing: 1px;
         }
 
-        /* Cámara */
         .contenedor-camara {
             display: flex;
             flex-direction: column;
             height: 100%;
+            position: relative;
+        }
+
+        .wrapper-video {
+            width: 60%;
+            aspect-ratio: 16 / 9;
+            background-color: #1a1a1a;
+            background-image: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255, 255, 255, 0.03) 10px,
+                    rgba(255, 255, 255, 0.03) 20px
+                );
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 2px solid #333;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         #video-stream {
             width: 100%;
-            aspect-ratio: 16 / 9;
-            background-color: #000000;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            border: 2px solid #000;
+            height: 100%;
             object-fit: cover;
+            border-radius: 3px;
+        }
+
+        .overlay-camara {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(50, 50, 50, 0.8) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border-radius: 3px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .wrapper-video:not([data-active]) .overlay-camara {
+            opacity: 1;
+        }
+
+        .overlay-camara-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+            opacity: 0.6;
+        }
+
+        .overlay-camara-text {
+            color: #999;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 1px;
         }
 
         .estado-camara {
             padding: 10px;
-            background-color: #FFF3CD;
-            color: #F2B705;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+            color: #1e40af;
             border-radius: 5px;
             font-size: 12px;
+            border: 1px solid #93c5fd;
         }
 
         .estado-camara.activa {
-            background-color: #D4EDDA;
-            color: #6BBF59;
+            background: linear-gradient(135deg, #d1fae5 0%, #d1fae5 100%);
+            color: #065f46;
+            border: 1px solid #86efac;
         }
 
         .estado-camara.error {
-            background-color: #F8D7DA;
-            color: #E57373;
+            background: linear-gradient(135deg, #fee2e2 0%, #fee2e2 100%);
+            color: #7f1d1d;
+            border: 1px solid #fca5a5;
         }
 
         /* Tablas */
@@ -205,7 +263,7 @@
         }
 
         thead {
-            background-color: #0f4c75;
+            background-color: #1e40af;
             color: white;
         }
 
@@ -223,8 +281,8 @@
         }
 
         tbody tr:hover {
-            background-color: #D9B44A;
-            color: #2E2E2E;
+            background-color: #e0f2fe;
+            color: #1a202c;
         }
 
         /* Modal */
@@ -275,11 +333,19 @@
         .form-group input {
             width: 100%;
             padding: 10px;
-            border: none;
-            background-color: #D9D9D9;
-            color: #2E2E2E;
+            border: 2px solid #e5e7eb;
+            background-color: #f9fafb;
+            color: #1a202c;
             border-radius: 5px;
             font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .boton-form {
@@ -293,49 +359,50 @@
         }
 
         .boton-guardar {
-            background-color: #6BBF59;
-            color: #000000;
+            background-color: #10b981;
+            color: white;
         }
 
         .boton-guardar:hover {
-            background-color: #5aa854;
+            background-color: #059669;
         }
 
         .boton-cancelar {
-            background-color: #E57373;
-            color: #2E2E2E;
+            background-color: #ef4444;
+            color: white;
         }
 
         .boton-cancelar:hover {
-            background-color: #ff5252;
+            background-color: #dc2626;
         }
 
         /* Alertas */
         .alerta {
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-bottom: 20px;
             display: none;
+            border-left: 4px solid;
         }
 
         .alerta.exito {
-            background-color: #D4EDDA;
-            color: #155724;
-            border: 1px solid #6BBF59;
+            background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
+            color: #065f46;
+            border-left-color: #10b981;
             display: block;
         }
 
         .alerta.error {
-            background-color: #F8D7DA;
-            color: #721c24;
-            border: 1px solid #E57373;
+            background-color: #fee2e2;
+            color: #7f1d1d;
+            border-left-color: #ef4444;
             display: block;
         }
 
         .alerta.advertencia {
-            background-color: #FFF3CD;
-            color: #856404;
-            border: 1px solid #F2B705;
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
             display: block;
         }
 
@@ -352,12 +419,13 @@
         }
 
         .notificacion {
-            background-color: #6BBF59;
+            background-color: #1e40af;
             color: white;
             padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             animation: slideIn 0.3s ease-out;
+            border-left: 4px solid #3b82f6;
         }
 
         @keyframes slideIn {
@@ -456,8 +524,13 @@
                 <div class="contenedor-tarjeta">
                     <h2 class="titulo-seccion">Cámara</h2>
                     <div class="contenedor-camara">
-                        <img id="video-stream" src="" alt="Stream de cámara">
-                        <div class="estado-camara" id="estado-camara">● Estado: Cámara apagada</div>
+                        <div class="wrapper-video" id="wrapper-video">
+                            <img id="video-stream" src=""  >
+                            <div class="overlay-camara">
+                                <div class="overlay-camara-icon">📹</div>
+                                <div class="overlay-camara-text">CÁMARA APAGADA</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -588,7 +661,7 @@
                     const row = `<tr>
                         <td>${placa.placa}</td>
                         <td>${placa.propietario}</td>
-                        <td><button onclick="eliminarPlaca('${placa.placa}')" style="padding: 5px 10px; background-color: #E57373; color: white; border: none; border-radius: 3px; cursor: pointer;">Eliminar</button></td>
+                        <td><button onclick="eliminarPlaca('${placa.placa}')" style="padding: 5px 10px; background-color: #ef4444; color: white; border: none; border-radius: 3px; cursor: pointer;">Eliminar</button></td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -633,6 +706,14 @@
             // Obtener CSRF token
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
+            // Detectar si la cámara está activa
+            const camaraActiva = document.getElementById('estado-camara').classList.contains('activa');
+            if (camaraActiva) {
+                await detenerCamara();
+                // Esperar mínimo para que se cierre el stream anterior
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
             try {
                 const response = await fetch(`${API_BASE}/web/add-placa/`, {
                     method: 'POST',
@@ -647,12 +728,30 @@
                     alert(`Placa ${placa} registrada correctamente.`);
                     cerrarModal();
                     cargarPlacas();
+                    
+                    // Reiniciar cámara si estaba activa (con pequeño delay)
+                    if (camaraActiva) {
+                        await new Promise(resolve => setTimeout(resolve, 150));
+                        await iniciarCamara();
+                    }
                 } else {
                     const error = await response.json();
                     alert(`Error: ${error.error}`);
+                    
+                    // Reiniciar cámara si estaba activa
+                    if (camaraActiva) {
+                        await new Promise(resolve => setTimeout(resolve, 150));
+                        await iniciarCamara();
+                    }
                 }
             } catch (error) {
                 alert(`Error: ${error}`);
+                
+                // Reiniciar cámara si estaba activa
+                if (camaraActiva) {
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                    await iniciarCamara();
+                }
             }
         }
 
@@ -689,10 +788,15 @@
 
         // Cámara
         async function iniciarCamara() {
-            const estadoCamara = document.getElementById('estado-camara');
             const imgStream = document.getElementById('video-stream');
+            const wrapper = document.getElementById('wrapper-video');
             
             try {
+                // Limpiar cualquier stream anterior
+                imgStream.src = '';
+                wrapper.removeAttribute('data-active');
+                await new Promise(resolve => setTimeout(resolve, 150));
+                
                 // Solicitar al servidor que inicie el streaming
                 const response = await fetch('/api/video/iniciar/', {
                     method: 'POST'
@@ -702,40 +806,37 @@
                     throw new Error('No se pudo iniciar el streaming');
                 }
                 
-                // Configurar la imagen para que muestre el stream MJPEG
-                imgStream.src = '/api/video/';
-                
-                estadoCamara.textContent = '● Estado: Cámara activa';
-                estadoCamara.classList.add('activa');
-                estadoCamara.classList.remove('error');
+                // Agregar timestamp para forzar recarga de stream
+                const timestamp = new Date().getTime();
+                imgStream.src = `/api/video/?t=${timestamp}`;
+                wrapper.setAttribute('data-active', 'true');
                 
                 console.log('Cámara iniciada - Mostrando stream MJPEG');
                 
             } catch (error) {
                 console.error('Error iniciando cámara:', error);
-                estadoCamara.textContent = 'Estado: Error - ' + error.message;
-                estadoCamara.classList.add('error');
-                estadoCamara.classList.remove('activa');
             }
         }
 
-                async function detenerCamara() {
-            const estadoCamara = document.getElementById('estado-camara');
+        async function detenerCamara() {
             const imgStream = document.getElementById('video-stream');
+            const wrapper = document.getElementById('wrapper-video');
             
             try {
                 // Solicitar al servidor que detenga el streaming
-                await fetch('/api/video/detener/', {
+                const detenerPromise = fetch('/api/video/detener/', {
                     method: 'POST'
                 });
                 
-                // Limpiar la imagen
+                // Limpiar inmediatamente
                 imgStream.src = '';
+                wrapper.removeAttribute('data-active');
                 
-                estadoCamara.textContent = 'Estado: Cámara apagada';
-                estadoCamara.classList.remove('activa', 'error');
+                // Esperar a que se cierre la conexión
+                await new Promise(resolve => setTimeout(resolve, 100));
+                await detenerPromise;
                 
-                console.log('Cámara detenida');
+                console.log('Cámara detenida correctamente');
                 
             } catch (error) {
                 console.error('Error deteniendo cámara:', error);
@@ -784,22 +885,22 @@
             switch(tipo) {
                 case 'entrada':
                     titulo = 'ENTRADA REGISTRADA';
-                    color = '#6BBF59';
+                    color = '#10b981';
                     icono = '✅';
                     break;
                 case 'salida':
                     titulo = '💰 SALIDA REGISTRADA';
-                    color = '#D9B44A';
+                    color = '#3b82f6';
                     icono = '💰';
                     break;
                 case 'advertencia':
                     titulo = '⚠️ ADVERTENCIA';
-                    color = '#F2B705';
+                    color = '#f59e0b';
                     icono = '⚠️';
                     break;
                 case 'error':
                     titulo = '❌ ERROR';
-                    color = '#E57373';
+                    color = '#ef4444';
                     icono = '❌';
                     break;
                 default:

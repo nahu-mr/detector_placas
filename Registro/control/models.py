@@ -11,7 +11,7 @@ class Registrada(models.Model):
 
 class Entrada(models.Model):
     placa = models.CharField(max_length=10)
-    entrada = models.DateTimeField(auto_now_add=True)
+    entrada = models.DateTimeField()
     salida = models.DateTimeField(null=True, blank=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     procesada = models.BooleanField(default=False)

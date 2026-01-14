@@ -17,7 +17,47 @@ python -m venv .venv
 ```powershell
 pip install -r requirements.txt
 ```
-*Esto tardará varios minutos (especialmente OpenCV, PyTorch y modelos de IA)*
+
+⏱️ **TIEMPO ESTIMADO: 15-25 minutos**
+- Depende de tu conexión a Internet
+- Con buena conexión (50+ Mbps): ~10-15 minutos
+- Con conexión normal (20-50 Mbps): ~15-20 minutos
+- Con conexión lenta (< 20 Mbps): ~25-30 minutos
+
+*Esto tardará varios minutos porque hay paquetes grandes como PyTorch, OpenCV y modelos de IA. No cierres la terminal mientras se instala.*
+
+### ⚠️ CONFIGURAR LA BASE DE DATOS (IMPORTANTE)
+
+#### 1. Crear la base de datos en MySQL Workbench
+
+1. Abre **MySQL Workbench**
+2. Conéctate a tu servidor MySQL
+3. Abre el archivo SQL que está en: `scripts/CREAR_BASE_DATOS.sql`
+4. Copia todo el contenido del archivo
+5. Pégalo en MySQL Workbench
+6. Ejecuta el script
+
+El script creará automáticamente la base de datos `control_placas` con todas las tablas necesarias.
+
+#### 2. Actualizar las credenciales en settings.py
+Antes de ejecutar el servidor, debes configurar tu contraseña de MySQL en:
+```
+Registro/Registro/settings.py
+```
+
+Busca la sección `DATABASES` y actualiza con tus credenciales:
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'control_placas',        # Nombre de tu base de datos
+        'USER': 'root',                  # Tu usuario MySQL
+        'PASSWORD': 'TU_CONTRASEÑA',     # ⚠️ REEMPLAZA AQUÍ
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
+```
 
 ### 4️⃣ Navegar a la carpeta de Django
 ```powershell

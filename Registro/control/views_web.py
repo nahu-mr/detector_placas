@@ -25,6 +25,7 @@ current_frame = None
 placas_en_proceso = {}
 notificaciones_queue = Queue()  # Cola de eventos para SSE
 placas_tiempo_entrada = {}  # Rastrear cuándo se registró cada entrada
+placas_tiempo_salida = {}  # Rastrear cuándo se registró cada salida
 
 @require_http_methods(["GET"])
 def dashboard(request):
@@ -105,9 +106,12 @@ def detener_camara_streaming():
     global cap
     with camera_lock:
         if cap:
-            cap.release()
+            try:
+                cap.release()
+            except:
+                pass
             cap = None
-            print("❌ Cámara detenida")
+            print("❌ Cámara detenida correctamente")
 
 def generar_frames():
     """Generador de frames para MJPEG streaming"""
@@ -159,10 +163,20 @@ def generar_frames():
                    b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n\r\n' 
                    + frame_bytes + b'\r\n')
             
+        except GeneratorExit:
+            # Cuando el cliente desconecta
+            print("🔌 Cliente desconectó del stream")
+            break
         except Exception as e:
             print(f"Error en generar_frames: {e}")
             time.sleep(0.1)
+            # Reiniciar cámara si hubo error
+            if cap is None:
+                iniciar_camara_streaming()
             continue
+    
+    # Al terminar el generador, detener la cámara
+    detener_camara_streaming()
 
 @require_http_methods(["GET"])
 def video_feed(request):
@@ -238,6 +252,19 @@ def procesar_placa_async(placa):
         entrada = Entrada.objects.filter(placa=placa, salida__isnull=True).first()
         
         if not entrada:
+            # VERIFICAR SI HAN PASADO 3 SEGUNDOS DESDE LA ÚLTIMA SALIDA
+            tiempo_salida = placas_tiempo_salida.get(placa)
+            if tiempo_salida is not None:
+                tiempo_transcurrido_salida = time.time() - tiempo_salida
+                
+                # Si han pasado menos de 3 segundos desde la salida, no procesar entrada
+                if tiempo_transcurrido_salida < 3:
+                    print(f"⏳ Placa {placa} detectada pero espera de salida ({tiempo_transcurrido_salida:.1f}s). Requiere 3s antes de nueva entrada.")
+                    return
+                else:
+                    # Ya pasaron 3 segundos, limpiar registro de salida
+                    del placas_tiempo_salida[placa]
+            
             # Nueva entrada
             nueva_entrada = Entrada.objects.create(placa=placa, entrada=timezone.now())
             
@@ -280,7 +307,10 @@ def procesar_placa_async(placa):
             entrada.procesada = True
             entrada.save()
             
-            # Limpiar del diccionario de rastreo
+            # Rastrear tiempo de salida para delay antes de siguiente entrada
+            placas_tiempo_salida[placa] = time.time()
+            
+            # Limpiar del diccionario de rastreo de entrada
             if placa in placas_tiempo_entrada:
                 del placas_tiempo_entrada[placa]
             
