@@ -32,7 +32,7 @@ def dashboard(request):
     """Vista principal del dashboard web"""
     context = {
         'placas_count': Registrada.objects.filter(activo=True).count(),
-        'movimientos_today': Entrada.objects.filter(entrada__date=timezone.now().date()).count(),
+        'movimientos_today': Entrada.objects.filter(entrada__date=timezone.localdate()).count(),
     }
     return render(request, 'dashboard.html', context)
 
@@ -53,8 +53,8 @@ def get_movimientos(request):
     for mov in movimientos:
         result.append({
             'placa': mov['placa'],
-            'entrada': mov['entrada'].strftime("%d/%m/%Y %H:%M:%S") if mov['entrada'] else '-',
-            'salida': mov['salida'].strftime("%d/%m/%Y %H:%M:%S") if mov['salida'] else '-',
+            'entrada': formatear_hora_local(mov['entrada']),
+            'salida': formatear_hora_local(mov['salida']),
             'monto': f"S/ {mov['monto']:.2f}" if mov['procesada'] else '-',
             'accion': 'SALIDA' if mov['salida'] else 'ENTRADA'
         })
@@ -304,8 +304,8 @@ def procesar_placa_async(placa):
             evento = {
                 'tipo': 'entrada',
                 'placa': placa,
-                'mensaje': f'✅ Placa: {placa}\n\nRegistrada como ENTRADA\n\nFecha: {timezone.now().strftime("%d/%m/%Y %H:%M:%S")}',
-                'fecha': timezone.now().strftime("%d/%m/%Y %H:%M:%S")
+                'mensaje': f'✅ Placa: {placa}\n\nRegistrada como ENTRADA\n\nFecha: {formatear_hora_local(timezone.now())}',
+                'fecha': formatear_hora_local(timezone.now())
             }
             notificaciones_queue.put(evento)
             print(f"✅ ENTRADA registrada: {placa}")
@@ -350,7 +350,7 @@ def procesar_placa_async(placa):
                 'mensaje': f'💰 COBRO GENERADO\n\nPlaca: {placa}\nTiempo: {duracion_minutos} minutos\nMonto: S/ {monto:.2f}',
                 'duracion': duracion_minutos,
                 'monto': monto,
-                'fecha': salida.strftime("%d/%m/%Y %H:%M:%S")
+                'fecha': formatear_hora_local(salida)
             }
             notificaciones_queue.put(evento)
             print(f"✅ SALIDA registrada: {placa} - Monto: S/ {monto}")
@@ -393,7 +393,7 @@ def registrar_salida(request):
         return JsonResponse({
             'success': True,
             'placa': entrada.placa,
-            'salida': salida.strftime("%d/%m/%Y %H:%M:%S"),
+            'salida': formatear_hora_local(salida),
             'monto': f"{monto:.2f}",
             'duracion': f"{duracion_minutos:.1f} min"
         }, status=200)
@@ -415,3 +415,6 @@ def clear_movimientos(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+def formatear_hora_local(fecha):
+    """Convierte fechas UTC almacenadas por Django a hora local de Lima."""
+    return timezone.localtime(fecha).strftime("%d/%m/%Y %H:%M:%S") if fecha else '-'

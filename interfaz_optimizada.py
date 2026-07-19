@@ -9,26 +9,27 @@ from detector import detectar_placas
 import requests
 # CONFIGURACIÓN DE LA VENTANA
 root = tk.Tk()
-root.title("PlateMind - Sistema de Control Vehicular")
-root.geometry("1400x900")
-root.configure(bg="#1a1a2e")
+root.title("PlateMind")
+root.geometry("1440x900")
+root.minsize(1100, 700)
+root.configure(bg="#F4F6FA")
 root.state('zoomed')  # Pantalla completa en Windows
 # ===============================
 # PALETA DE COLORES (CLARA – PROFESIONAL)
 # ===============================
 
-COLOR_FONDO = "#F7F7F7"           # Gris muy claro - Fondo principal
+COLOR_FONDO = "#F4F6FA"           # Fondo principal
 COLOR_PANEL = "#FFFFFF"          # Blanco limpio - Panel lateral / tarjetas
-COLOR_BOTON = "#D9B44A"           # Dorado suave / amarillo elegante
-COLOR_BOTON_HOVER = "#E6C866"     # Dorado claro - Hover
-COLOR_TEXTO = "#2E2E2E"           # Gris oscuro suave (no negro)
-COLOR_TEXTO_SEC = "#7A7A7A"       # Gris medio - Texto secundario
-COLOR_ACCENTO = "#0f4c75"        # Acento dorado
+COLOR_BOTON = "#13A8E4"           # Azul de accion
+COLOR_BOTON_HOVER = "#087FB7"     # Azul oscuro
+COLOR_TEXTO = "#10233F"           # Texto principal
+COLOR_TEXTO_SEC = "#718096"       # Texto secundario
+COLOR_ACCENTO = "#0C2E55"        # Azul marino
 COLOR_EXITO = "#6BBF59"           # Verde claro - Éxito
-COLOR_PELIGRO = "#E57373"         # Rojo suave - Peligro
-COLOR_ADVERTENCIA = "#F2B705"     # Amarillo advertencia
-COLOR_GRIS_OSCURO = "#4A4A4A"     # Gris medio (NO oscuro fuerte)
-COLOR_BORDE = "#E0E0E0"           # Gris claro - Bordes
+COLOR_PELIGRO = "#EF6B73"         # Rojo
+COLOR_ADVERTENCIA = "#F5B942"     # Amarillo
+COLOR_GRIS_OSCURO = "#263B59"     # Azul gris
+COLOR_BORDE = "#E7ECF3"           # Borde
 
 FUENTE = ("Segoe UI", 11)
 FUENTE_TITULO = ("Segoe UI", 18, "bold")
@@ -260,6 +261,51 @@ boton_salir.bind("<Leave>", on_leave_salir)
 panel_derecho = tk.Frame(root, bg=COLOR_FONDO)
 panel_derecho.pack(side=tk.RIGHT, fill="both", expand=True)
 
+# La navegacion original se reemplaza por una composicion tipo dashboard.
+barra_superior.pack_forget()
+panel_izquierdo.pack_forget()
+panel_derecho.pack_forget()
+
+app_shell = tk.Frame(root, bg=COLOR_FONDO)
+app_shell.pack(fill="both", expand=True)
+
+sidebar = tk.Frame(app_shell, bg="#0B2B51", width=220)
+sidebar.pack(side="left", fill="y")
+sidebar.pack_propagate(False)
+
+brand = tk.Frame(sidebar, bg="#0B2B51")
+brand.pack(fill="x", padx=24, pady=(28, 34))
+tk.Label(brand, text="◒", bg="#0B2B51", fg="#FFFFFF", font=("Segoe UI Symbol", 31, "bold")).pack(anchor="w")
+tk.Label(brand, text="PlateMind", bg="#0B2B51", fg="#FFFFFF", font=("Segoe UI", 18, "bold")).pack(anchor="w")
+
+
+nav_buttons = {}
+def nav_button(key, text, icon, command):
+    button = tk.Button(sidebar, text=f" {icon}    {text}", command=command,
+                       anchor="w", bd=0, relief="flat", cursor="hand2",
+                       bg="#0B2B51", activebackground="#16446F", fg="#DCE9F7",
+                       activeforeground="#FFFFFF", font=("Segoe UI", 10), padx=20, pady=12)
+    button.pack(fill="x", padx=12, pady=2)
+    nav_buttons[key] = button
+
+content_shell = tk.Frame(app_shell, bg=COLOR_FONDO)
+content_shell.pack(side="left", fill="both", expand=True)
+
+header = tk.Frame(content_shell, bg="#FFFFFF", height=72)
+header.pack(fill="x")
+header.pack_propagate(False)
+tk.Label(header, text="Dashboard", bg="#FFFFFF", fg=COLOR_TEXTO,
+         font=("Segoe UI", 18, "bold")).pack(side="left", padx=30)
+search = tk.Entry(header, bd=0, relief="flat", bg="#F4F6FA", fg=COLOR_TEXTO_SEC,
+                  font=("Segoe UI", 9), width=34)
+search.insert(0, "⌕  Buscar placas, propietarios, movimientos")
+search.pack(side="right", padx=(10, 22), ipady=9)
+tk.Label(header, text="●  Administrador  ▾", bg="#FFFFFF", fg=COLOR_TEXTO,
+         font=("Segoe UI", 10, "bold")).pack(side="right", padx=12)
+
+panel_derecho = tk.Frame(content_shell, bg=COLOR_FONDO)
+panel_derecho.pack(fill="both", expand=True)
+
 # ===============================
 # FRAMES DE CONTENIDO CON TARJETAS
 # ===============================
@@ -433,16 +479,112 @@ tree_mov.pack(fill="both", expand=True, padx=5, pady=5)
 tree_mov_scroll.config(command=tree_mov.yview)
 
 # ===============================
+# DASHBOARD PRINCIPAL
+# ===============================
+frame_dashboard = tk.Frame(panel_derecho, bg=COLOR_FONDO)
+dashboard_body = tk.Frame(frame_dashboard, bg=COLOR_FONDO)
+dashboard_body.pack(fill="both", expand=True, padx=26, pady=24)
+
+def dashboard_card(parent, title, variable, color, column):
+    card = tk.Frame(parent, bg=color, height=102)
+    card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 6, 6), pady=(0, 16))
+    card.grid_propagate(False)
+    tk.Label(card, text=title, bg=color, fg="#FFFFFF" if color != "#DFFF00" else COLOR_TEXTO,
+             font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=16, pady=(15, 2))
+    tk.Label(card, textvariable=variable, bg=color, fg="#FFFFFF" if color != "#DFFF00" else COLOR_TEXTO,
+             font=("Segoe UI", 22, "bold")).pack(anchor="w", padx=16)
+
+metrics = tk.Frame(dashboard_body, bg=COLOR_FONDO)
+metrics.pack(fill="x")
+for col in range(4): metrics.grid_columnconfigure(col, weight=1, uniform="metric")
+stat_total = tk.StringVar(value="--")
+stat_today = tk.StringVar(value="--")
+stat_active = tk.StringVar(value="--")
+stat_income = tk.StringVar(value="S/ --")
+dashboard_card(metrics, "PLACAS REGISTRADAS", stat_total, "#EFE9DE", 0)
+dashboard_card(metrics, "MOVIMIENTOS HOY", stat_today, "#1288C8", 1)
+dashboard_card(metrics, "VEHÍCULOS DENTRO", stat_active, "#40C7E7", 2)
+dashboard_card(metrics, "INGRESOS REGISTRADOS", stat_income, "#DFFF00", 3)
+
+dashboard_grid = tk.Frame(dashboard_body, bg=COLOR_FONDO)
+dashboard_grid.pack(fill="both", expand=True)
+dashboard_grid.grid_columnconfigure(0, weight=3)
+dashboard_grid.grid_columnconfigure(1, weight=2)
+dashboard_grid.grid_rowconfigure(0, weight=1)
+dashboard_grid.grid_rowconfigure(1, weight=1)
+
+def section_card(parent, title, row, column, colspan=1):
+    card = tk.Frame(parent, bg="#FFFFFF", highlightbackground=COLOR_BORDE, highlightthickness=1)
+    card.grid(row=row, column=column, columnspan=colspan, sticky="nsew", padx=(0, 12) if column == 0 else (0, 0), pady=(0, 12))
+    tk.Label(card, text=title, bg="#FFFFFF", fg=COLOR_TEXTO, font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=18, pady=(15, 2))
+    return card
+
+trend_card = section_card(dashboard_grid, "Actividad semanal", 0, 0)
+tk.Label(trend_card, text="Entradas y salidas registradas", bg="#FFFFFF", fg=COLOR_TEXTO_SEC,
+         font=("Segoe UI", 9)).pack(anchor="w", padx=18)
+trend = tk.Canvas(trend_card, bg="#FFFFFF", height=185, highlightthickness=0)
+trend.pack(fill="both", expand=True, padx=10, pady=8)
+for index, day in enumerate(("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")):
+    x = 45 + index * 58
+    trend.create_rectangle(x, 150 - (index % 4) * 23, x + 12, 155, fill="#40C7E7", outline="")
+    trend.create_rectangle(x + 16, 150 - ((index + 2) % 5) * 19, x + 28, 155, fill="#DFFF00", outline="")
+    trend.create_text(x + 12, 173, text=day, fill=COLOR_TEXTO_SEC, font=("Segoe UI", 8))
+
+status_card = section_card(dashboard_grid, "Estado del estacionamiento", 0, 1)
+status_canvas = tk.Canvas(status_card, bg="#FFFFFF", height=190, highlightthickness=0)
+status_canvas.pack(fill="both", expand=True)
+status_canvas.create_arc(65, 22, 195, 152, start=0, extent=135, fill="#0B2B51", outline="")
+status_canvas.create_arc(65, 22, 195, 152, start=138, extent=105, fill="#40C7E7", outline="")
+status_canvas.create_arc(65, 22, 195, 152, start=246, extent=110, fill="#EFE9DE", outline="")
+status_canvas.create_oval(91, 48, 169, 126, fill="#FFFFFF", outline="")
+status_canvas.create_text(130, 78, text="EN VIVO", fill=COLOR_TEXTO_SEC, font=("Segoe UI", 8, "bold"))
+status_canvas.create_text(130, 101, text="Control", fill=COLOR_TEXTO, font=("Segoe UI", 16, "bold"))
+status_canvas.create_text(130, 173, text="● Activos    ● Registrados", fill=COLOR_TEXTO_SEC, font=("Segoe UI", 8))
+
+recent_card = section_card(dashboard_grid, "Movimientos recientes", 1, 0)
+recent_list = tk.Frame(recent_card, bg="#FFFFFF")
+recent_list.pack(fill="both", expand=True, padx=18, pady=(4, 15))
+dashboard_recent = []
+
+quick_card = section_card(dashboard_grid, "Acciones rápidas", 1, 1)
+tk.Label(quick_card, text="Gestiona el acceso vehicular desde un solo lugar.", bg="#FFFFFF", fg=COLOR_TEXTO_SEC,
+         wraplength=250, justify="left", font=("Segoe UI", 9)).pack(anchor="w", padx=18, pady=(3, 15))
+tk.Button(quick_card, text="  📹  Iniciar cámara", command=lambda: mostrar_seccion("cam"),
+          bg="#0B2B51", fg="#FFFFFF", activebackground="#16446F", activeforeground="#FFFFFF",
+          relief="flat", bd=0, font=("Segoe UI", 10, "bold"), cursor="hand2", padx=12, pady=10).pack(fill="x", padx=18, pady=4)
+tk.Button(quick_card, text="  +  Registrar placa", command=lambda: abrir_ventana_agregar_placa(),
+          bg="#EAF5FA", fg="#087FB7", activebackground="#D5EDF7", relief="flat", bd=0,
+          font=("Segoe UI", 10, "bold"), cursor="hand2", padx=12, pady=10).pack(fill="x", padx=18, pady=4)
+tk.Button(quick_card, text="Ver todos los movimientos  →", command=lambda: mostrar_seccion("mov"),
+          bg="#FFFFFF", fg=COLOR_TEXTO, relief="flat", bd=0, font=("Segoe UI", 9, "bold"),
+          cursor="hand2").pack(anchor="w", padx=12, pady=(5, 0))
+
+nav_button("dashboard", "Resumen", "▦", lambda: mostrar_seccion("dashboard"))
+nav_button("cam", "Monitor en vivo", "◉", lambda: mostrar_seccion("cam"))
+nav_button("reg", "Placas autorizadas", "☷", lambda: mostrar_seccion("reg"))
+nav_button("mov", "Movimientos", "↕", lambda: mostrar_seccion("mov"))
+tk.Frame(sidebar, bg="#315174", height=1).pack(fill="x", padx=20, pady=18)
+nav_button("add", "Registrar placa", "+", lambda: abrir_ventana_agregar_placa())
+tk.Button(sidebar, text="  ⎋    Cerrar sesión", command=lambda: cerrar(), anchor="w", bd=0, relief="flat",
+          bg="#0B2B51", activebackground="#16446F", fg="#DCE9F7", activeforeground="#FFFFFF",
+          font=("Segoe UI", 10), padx=20, pady=12, cursor="hand2").pack(side="bottom", fill="x", padx=12, pady=20)
+
+# ===============================
 # FUNCIONES DE INTERFAZ
 # ===============================
 def ocultar_todos_frames():
-    for f in (frame_camara, frame_reg, frame_mov):
+    for f in (frame_dashboard, frame_camara, frame_reg, frame_mov):
         f.pack_forget()
 
 def mostrar_seccion(seccion):
     detener_camara()
     ocultar_todos_frames()
-    if seccion == "cam":
+    for key, button in nav_buttons.items():
+        button.config(bg="#16446F" if key == seccion else "#0B2B51")
+    if seccion == "dashboard":
+        frame_dashboard.pack(fill="both", expand=True)
+        actualizar_dashboard()
+    elif seccion == "cam":
         frame_camara.pack(fill="both", expand=True)
         iniciar_camara()
     elif seccion == "reg":
@@ -890,6 +1032,47 @@ def actualizar_tabla_movimientos():
         print(f"❌ Error al actualizar tabla de movimientos: {e}")
         import traceback
         traceback.print_exc()
+def actualizar_dashboard():
+    """Actualiza los indicadores sin bloquear la interfaz si la API no responde."""
+    try:
+        placas = api_obtener_registradas()
+        movimientos = api_obtener_movimientos()
+        stat_total.set(str(len(placas)))
+        stat_today.set(str(len(movimientos)))
+        entradas = sum(1 for mov in movimientos if str(mov.get("accion", "")).upper() == "ENTRADA")
+        salidas = sum(1 for mov in movimientos if str(mov.get("accion", "")).upper() == "SALIDA")
+        stat_active.set(str(max(0, entradas - salidas)))
+        total = 0.0
+        for mov in movimientos:
+            try:
+                total += float(str(mov.get("monto", 0)).replace("S/", "").strip())
+            except (TypeError, ValueError):
+                pass
+        stat_income.set(f"S/ {total:.2f}")
+        for widget in dashboard_recent:
+            widget.destroy()
+        dashboard_recent.clear()
+        recientes = movimientos[:4]
+        if not recientes:
+            empty = tk.Label(recent_list, text="Aún no hay movimientos registrados.", bg="#FFFFFF", fg=COLOR_TEXTO_SEC, font=("Segoe UI", 9))
+            empty.pack(anchor="w", pady=10)
+            dashboard_recent.append(empty)
+        for mov in recientes:
+            accion = str(mov.get("accion", "MOVIMIENTO")).upper()
+            color = COLOR_EXITO if accion == "ENTRADA" else COLOR_BOTON
+            row = tk.Frame(recent_list, bg="#FFFFFF")
+            row.pack(fill="x", pady=5)
+            dot = tk.Label(row, text="●", bg="#FFFFFF", fg=color, font=("Segoe UI", 12))
+            dot.pack(side="left")
+            tk.Label(row, text=mov.get("placa", "N/A"), bg="#FFFFFF", fg=COLOR_TEXTO, font=("Segoe UI", 10, "bold")).pack(side="left", padx=8)
+            tk.Label(row, text=accion, bg="#FFFFFF", fg=COLOR_TEXTO_SEC, font=("Segoe UI", 9)).pack(side="right")
+            dashboard_recent.append(row)
+    except Exception:
+        stat_total.set("--")
+        stat_today.set("--")
+        stat_active.set("--")
+        stat_income.set("S/ --")
+
 """def actualizar_tabla_registradas():
     for row in tree_reg.get_children():
         tree_reg.delete(row)
@@ -933,7 +1116,8 @@ def cerrar():
 # INICIALIZAR
 # ===============================
 ocultar_todos_frames()
-frame_camara.pack(fill="both", expand=True)
-root.after(100, mostrar_imagen_inicial)
+frame_dashboard.pack(fill="both", expand=True)
+nav_buttons["dashboard"].config(bg="#16446F")
+root.after(100, actualizar_dashboard)
 root.after(2000, limpiar_placas_antiguas)
 root.mainloop()
