@@ -605,8 +605,31 @@
         </div>
     </div>
 
+    <!-- Modal Editar Placa -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-contenido">
+            <h2 class="modal-titulo">Editar Placa</h2>
+            <form onsubmit="actualizarPlaca(event)">
+                <div class="form-group">
+                    <label>Número de Placa:</label>
+                    <input type="text" id="editar-placa" required>
+                </div>
+                <div class="form-group">
+                    <label>Propietario:</label>
+                    <input type="text" id="editar-propietario">
+                </div>
+                <div>
+                    <button type="submit" class="boton-form boton-guardar">💾 Guardar cambios</button>
+                    <button type="button" class="boton-form boton-cancelar" onclick="cerrarModalEditar()">❌ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api';
+        let placasRegistradas = new Map();
+        let placaOriginalEnEdicion = '';
 
         // Actualizar hora y fecha
         function actualizarHora() {
@@ -656,12 +679,18 @@
                     tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">No hay placas registradas</td></tr>';
                     return;
                 }
+
+                placasRegistradas = new Map(data.map(placa => [placa.placa, placa]));
                 
                 data.forEach(placa => {
+                    const placaCodificada = encodeURIComponent(placa.placa);
                     const row = `<tr>
                         <td>${placa.placa}</td>
                         <td>${placa.propietario}</td>
-                        <td><button onclick="eliminarPlaca('${placa.placa}')" style="padding: 5px 10px; background-color: #ef4444; color: white; border: none; border-radius: 3px; cursor: pointer;">Eliminar</button></td>
+                        <td>
+                            <button onclick="abrirModalEditar('${placaCodificada}')" style="padding: 5px 10px; margin-right: 5px; background-color: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer;">Editar</button>
+                            <button onclick="eliminarPlaca('${placa.placa}')" style="padding: 5px 10px; background-color: #ef4444; color: white; border: none; border-radius: 3px; cursor: pointer;">Eliminar</button>
+                        </td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -706,8 +735,10 @@
             // Obtener CSRF token
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             
-            // Detectar si la cámara está activa
-            const camaraActiva = document.getElementById('estado-camara').classList.contains('activa');
+            // Detectar si la cámara está activa. El estado se guarda en el
+            // contenedor del video mediante el atributo data-active.
+            const wrapperVideo = document.getElementById('wrapper-video');
+            const camaraActiva = wrapperVideo && wrapperVideo.hasAttribute('data-active');
             if (camaraActiva) {
                 await detenerCamara();
                 // Esperar mínimo para que se cierre el stream anterior
@@ -784,6 +815,61 @@
             document.getElementById('modal-agregar').classList.remove('activo');
             document.getElementById('input-placa').value = '';
             document.getElementById('input-propietario').value = '';
+        }
+
+        // Edición de placas
+        function abrirModalEditar(placaCodificada) {
+            const placaOriginal = decodeURIComponent(placaCodificada);
+            const registro = placasRegistradas.get(placaOriginal);
+            if (!registro) {
+                alert('No se pudo encontrar la placa para editar.');
+                return;
+            }
+
+            placaOriginalEnEdicion = placaOriginal;
+            document.getElementById('editar-placa').value = registro.placa;
+            document.getElementById('editar-propietario').value = registro.propietario;
+            document.getElementById('modal-editar').classList.add('activo');
+            document.getElementById('editar-placa').focus();
+        }
+
+        function cerrarModalEditar() {
+            document.getElementById('modal-editar').classList.remove('activo');
+            placaOriginalEnEdicion = '';
+        }
+
+        async function actualizarPlaca(event) {
+            event.preventDefault();
+            const placa = document.getElementById('editar-placa').value.trim().toUpperCase();
+            const propietario = document.getElementById('editar-propietario').value.trim() || 'Sin especificar';
+
+            if (!placaOriginalEnEdicion || !placa) {
+                alert('Debe ingresar una placa válida.');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/web/update-placa/${encodeURIComponent(placaOriginalEnEdicion)}/`,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ placa, propietario })
+                    }
+                );
+                const data = await response.json();
+
+                if (!response.ok) {
+                    alert(`Error: ${data.error || 'No se pudo actualizar la placa.'}`);
+                    return;
+                }
+
+                alert(`Placa ${data.placa} actualizada correctamente.`);
+                cerrarModalEditar();
+                cargarPlacas();
+            } catch (error) {
+                alert(`Error al actualizar la placa: ${error}`);
+            }
         }
 
         // Cámara

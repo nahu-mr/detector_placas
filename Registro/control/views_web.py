@@ -91,6 +91,36 @@ def delete_placa(request, placa):
     except Registrada.DoesNotExist:
         return JsonResponse({'error': 'Placa no encontrada'}, status=404)
 
+
+@require_http_methods(["PUT"])
+@csrf_exempt
+def update_placa(request, placa):
+    """Actualiza la placa y/o el propietario de un registro autorizado."""
+    try:
+        registro = Registrada.objects.get(placa=placa.upper())
+        data = json.loads(request.body)
+        nueva_placa = data.get('placa', registro.placa).strip().upper()
+        propietario = data.get('propietario', '').strip() or 'Sin especificar'
+
+        if not nueva_placa:
+            return JsonResponse({'error': 'La placa no puede estar vacía'}, status=400)
+
+        if Registrada.objects.exclude(pk=registro.pk).filter(placa=nueva_placa).exists():
+            return JsonResponse({'error': 'La placa ya existe'}, status=400)
+
+        registro.placa = nueva_placa
+        registro.propietario = propietario
+        registro.save()
+        return JsonResponse({
+            'success': True,
+            'placa': registro.placa,
+            'propietario': registro.propietario,
+        })
+    except Registrada.DoesNotExist:
+        return JsonResponse({'error': 'Placa no encontrada'}, status=404)
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'error': 'Datos inválidos'}, status=400)
+
 def iniciar_camara_streaming():
     """Inicia la cámara para streaming continuo"""
     global cap
