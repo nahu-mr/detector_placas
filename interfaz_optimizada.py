@@ -71,10 +71,29 @@ def api_registrar_salida(placa):
 
 
 def api_registrar_autorizada(placa, propietario):
-    requests.post(
-        f"{API_BASE}/placas/",
-        json={"placa": placa, "propietario": propietario}
-    )
+    """Registra una placa y devuelve la respuesta del servidor.
+
+    No se debe mostrar una confirmación hasta que la API haya respondido con
+    éxito; de otro modo los errores (por ejemplo, una placa duplicada) quedan
+    ocultos al usuario.
+    """
+    try:
+        respuesta = requests.post(
+            f"{API_BASE}/placas/",
+            json={"placa": placa, "propietario": propietario},
+            timeout=10,
+        )
+        try:
+            datos = respuesta.json()
+        except ValueError:
+            datos = {}
+
+        if respuesta.status_code == 201:
+            return True, datos.get("placa", placa)
+
+        return False, datos.get("error", "No se pudo registrar la placa.")
+    except requests.RequestException as error:
+        return False, f"No se pudo conectar con el servidor: {error}"
 
 def api_obtener_registradas():
     r = requests.get(f"{API_BASE}/placas/")
@@ -614,6 +633,7 @@ def abrir_ventana_agregar_placa():
     # Centrar ventana
     ventana.transient(root)
     ventana.grab_set()
+    ventana.lift()
 
     tk.Label(
         ventana, 
@@ -634,6 +654,7 @@ def abrir_ventana_agregar_placa():
         bd=5
     )
     entry_placa.pack(pady=5, ipadx=10, ipady=8)
+    entry_placa.focus_set()
 
     tk.Label(ventana, text="Propietario:", font=FUENTE, bg=COLOR_PANEL, fg=COLOR_TEXTO).pack(pady=(15, 5))
     entry_prop = tk.Entry(
@@ -651,17 +672,42 @@ def abrir_ventana_agregar_placa():
         placa = entry_placa.get().strip().upper()
         prop = entry_prop.get().strip()
         if not placa:
-            messagebox.showwarning("Advertencia", "Debe ingresar una placa válida.")
+            messagebox.showwarning(
+                "Advertencia", "Debe ingresar una placa válida.", parent=ventana
+            )
             return
-        api_registrar_autorizada(placa, prop if prop else "Sin especificar")
-        messagebox.showinfo("Éxito", f"✅ Placa {placa} registrada correctamente.")
-        ventana.destroy()
-        mostrar_seccion("reg")
+
+        boton_guardar.config(state="disabled", text="Guardando...")
+
+        def registrar_en_segundo_plano():
+            exito, resultado = api_registrar_autorizada(
+                placa, prop if prop else "Sin especificar"
+            )
+
+            def finalizar_registro():
+                if not ventana.winfo_exists():
+                    return
+                if not exito:
+                    boton_guardar.config(state="normal", text="💾 Guardar")
+                    messagebox.showerror("No se pudo registrar", resultado, parent=ventana)
+                    return
+
+                messagebox.showinfo(
+                    "Éxito",
+                    f"✅ Placa {resultado} registrada correctamente.",
+                    parent=ventana,
+                )
+                ventana.destroy()
+                mostrar_seccion("reg")
+
+            root.after(0, finalizar_registro)
+
+        threading.Thread(target=registrar_en_segundo_plano, daemon=True).start()
 
     frame_botones = tk.Frame(ventana, bg=COLOR_PANEL)
     frame_botones.pack(pady=20)
 
-    tk.Button(
+    boton_guardar = tk.Button(
         frame_botones, 
         text="💾 Guardar", 
         bg=COLOR_EXITO, 
@@ -672,7 +718,8 @@ def abrir_ventana_agregar_placa():
         relief="flat",
         bd=0,
         cursor="hand2"
-    ).pack(side=tk.LEFT, padx=5)
+    )
+    boton_guardar.pack(side=tk.LEFT, padx=5)
     
     tk.Button(
         frame_botones, 
