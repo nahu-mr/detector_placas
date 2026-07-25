@@ -348,6 +348,58 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            background-color: #f9fafb;
+            color: #1a202c;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .acciones-tabla {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .boton-reporte {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 6px;
+            background-color: #0b2b51;
+            color: #ffffff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .boton-reporte:hover {
+            background-color: #123f70;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .modal-grid .form-group {
+            margin-bottom: 6px;
+        }
+
+        .campo-oculto {
+            display: none;
+        }
+
+        .modal-ayuda {
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.5;
+            margin: -8px 0 18px;
+        }
+
         .boton-form {
             padding: 10px 20px;
             border: none;
@@ -487,6 +539,8 @@
         .panel-derecho { padding:0; background:#f4f5f7; overflow:auto; }
         .app-header { height:72px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 30px; border-bottom:1px solid #edf0f5; }
         .app-header h1 { font-size:20px; color:#10233f; }
+        .user-area { display:flex; align-items:center; gap:14px; color:#10233f; }
+        .header-clock { font-size:13px; font-weight:700; font-family:'Courier New', monospace; color:#10233f; }
         .user-chip { font-size:13px; font-weight:600; color:#10233f; }
         .seccion { padding:26px; }
         .seccion.activa { display:block; }
@@ -529,6 +583,7 @@
         .bar-group.has-data:hover::before, .bar-group.is-today.has-data::before { opacity:1; }
         .bar-group.is-today::before { color:#b37a00; }
         @media (max-width:600px) { .activity-head { align-items:flex-start; flex-direction:column; gap:8px; } .chart-legend { gap:10px; } .bar-chart { grid-template-columns:28px minmax(0,1fr); } .chart-plot { gap:3px; } .bar { width:70%; } }
+        @media (max-width:600px) { .modal-grid { grid-template-columns:1fr; } .acciones-tabla { justify-content:stretch; } .boton-reporte { width:100%; } }
         .donut-wrap { display:flex; align-items:center; justify-content:center; height:170px; } .donut { width:132px; height:132px; border-radius:50%; background:conic-gradient(#0b2b51 0 38%, #1288c8 38% 68%, #40c7e7 68% 80%, #eee8dd 80% 100%); position:relative; } .donut::after { content:'EN VIVO\A Control'; white-space:pre; position:absolute; inset:27px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; text-align:center; color:#10233f; font-weight:700; font-size:14px; line-height:1.5; }
         .recent-item { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f0f2f5; font-size:13px; } .recent-dot { width:9px; height:9px; background:#19c37d; border-radius:50%; margin-right:10px; } .recent-item small { margin-left:auto; color:#718096; }
         .quick-action { display:block; width:100%; padding:11px; margin-top:10px; border:0; border-radius:6px; background:#0b2b51; color:#fff; text-align:left; font-weight:600; cursor:pointer; } .quick-action.alt { background:#eaf5fa; color:#087fb7; }
@@ -580,7 +635,10 @@
         <div class="panel-derecho">
             <header class="app-header">
                 <h1>Dashboard</h1>
-                <div><span class="user-chip">● Administrador ▾</span></div>
+                <div class="user-area">
+                    <span class="header-clock" id="hora-admin"></span>
+                    <span class="user-chip">● Administrador ▾</span>
+                </div>
             </header>
             <div id="seccion-dashboard" class="seccion activa dashboard">
                 <div class="metricas">
@@ -629,13 +687,16 @@
                             <thead>
                                 <tr>
                                     <th>PLACA</th>
+                                    <th>MODELO</th>
+                                    <th>COLOR</th>
                                     <th>PROPIETARIO</th>
+                                    <th>DNI</th>
                                     <th>ACCIONES</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-placas">
                                 <tr>
-                                    <td colspan="3" style="text-align: center; color: #999;">Cargando placas...</td>
+                                    <td colspan="6" style="text-align: center; color: #999;">Cargando placas...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -652,20 +713,85 @@
                             <thead>
                                 <tr>
                                     <th>PLACA</th>
-                                    <th>ACCIÓN</th>
-                                    <th>FECHA Y HORA</th>
+                                    <th>PROPIETARIO</th>
+                                    <th>ENTRADA</th>
+                                    <th>SALIDA</th>
+                                    <th>TIEMPO</th>
                                     <th>MONTO</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-movimientos">
                                 <tr>
-                                    <td colspan="4" style="text-align: center; color: #999;">Cargando movimientos...</td>
+                                    <td colspan="6" style="text-align: center; color: #999;">Cargando movimientos...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    <div class="acciones-tabla">
+                        <button class="boton-reporte" type="button" onclick="abrirModalReporte()">Generar reporte Excel</button>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Reporte de Movimientos -->
+    <div id="modal-reporte" class="modal">
+        <div class="modal-contenido">
+            <h2 class="modal-titulo">Reporte de Movimientos</h2>
+            <p class="modal-ayuda">Genera un Excel con placa, propietario, hora de entrada, hora de salida, tiempo dentro y monto.</p>
+            <form onsubmit="generarReporteMovimientos(event)">
+                <div class="form-group">
+                    <label>Tipo de reporte:</label>
+                    <select id="reporte-tipo" onchange="actualizarCamposReporte()">
+                        <option value="dia">Por día</option>
+                        <option value="rango">Por rango de fechas</option>
+                        <option value="mes">Por mes</option>
+                        <option value="anio">Por año</option>
+                    </select>
+                </div>
+
+                <div class="modal-grid">
+                    <div class="form-group campo-reporte" data-reporte-campo="dia">
+                        <label>Fecha:</label>
+                        <input type="date" id="reporte-fecha">
+                    </div>
+                    <div class="form-group campo-reporte campo-oculto" data-reporte-campo="rango">
+                        <label>Desde:</label>
+                        <input type="date" id="reporte-desde">
+                    </div>
+                    <div class="form-group campo-reporte campo-oculto" data-reporte-campo="rango">
+                        <label>Hasta:</label>
+                        <input type="date" id="reporte-hasta">
+                    </div>
+                    <div class="form-group campo-reporte campo-oculto" data-reporte-campo="mes">
+                        <label>Mes:</label>
+                        <select id="reporte-mes">
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="form-group campo-reporte campo-oculto" data-reporte-campo="mes anio">
+                        <label>Año:</label>
+                        <input type="number" id="reporte-anio" min="2020" max="2100">
+                    </div>
+                </div>
+
+                <div style="margin-top: 18px;">
+                    <button type="submit" class="boton-form boton-guardar">Descargar Excel</button>
+                    <button type="button" class="boton-form boton-cancelar" onclick="cerrarModalReporte()">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -679,8 +805,20 @@
                     <input type="text" id="input-placa" placeholder="ej: ABC-123" required>
                 </div>
                 <div class="form-group">
-                    <label>Propietario:</label>
-                    <input type="text" id="input-propietario" placeholder="ej: Juan Pérez">
+                    <label>Modelo del auto:</label>
+                    <input type="text" id="input-modelo-auto" placeholder="ej: Toyota Corolla">
+                </div>
+                <div class="form-group">
+                    <label>Color del auto:</label>
+                    <input type="text" id="input-color-auto" placeholder="ej: Blanco">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del propietario:</label>
+                    <input type="text" id="input-nombre-propietario" placeholder="ej: Juan Pérez">
+                </div>
+                <div class="form-group">
+                    <label>DNI del propietario:</label>
+                    <input type="text" id="input-dni-propietario" placeholder="ej: 12345678">
                 </div>
                 <div>
                     <button type="submit" class="boton-form boton-guardar">💾 Guardar</button>
@@ -700,8 +838,20 @@
                     <input type="text" id="editar-placa" required>
                 </div>
                 <div class="form-group">
-                    <label>Propietario:</label>
-                    <input type="text" id="editar-propietario">
+                    <label>Modelo del auto:</label>
+                    <input type="text" id="editar-modelo-auto">
+                </div>
+                <div class="form-group">
+                    <label>Color del auto:</label>
+                    <input type="text" id="editar-color-auto">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del propietario:</label>
+                    <input type="text" id="editar-nombre-propietario">
+                </div>
+                <div class="form-group">
+                    <label>DNI del propietario:</label>
+                    <input type="text" id="editar-dni-propietario">
                 </div>
                 <div>
                     <button type="submit" class="boton-form boton-guardar">💾 Guardar cambios</button>
@@ -719,12 +869,14 @@
         // Actualizar hora y fecha
         function actualizarHora() {
             const ahora = new Date();
-            document.getElementById('hora-actual').textContent = ahora.toLocaleTimeString('es-PE', {
+            const horaLima = ahora.toLocaleTimeString('es-PE', {
                 timeZone: 'America/Lima',
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
             });
+            document.getElementById('hora-actual').textContent = horaLima;
+            document.getElementById('hora-admin').textContent = horaLima;
             document.getElementById('fecha-actual').textContent = ahora.toLocaleDateString('es-ES', {
                 timeZone: 'America/Lima',
                 weekday: 'long',
@@ -770,7 +922,7 @@
                 tbody.innerHTML = '';
                 
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">No hay placas registradas</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No hay placas registradas</td></tr>';
                     return;
                 }
 
@@ -780,7 +932,10 @@
                     const placaCodificada = encodeURIComponent(placa.placa);
                     const row = `<tr>
                         <td>${placa.placa}</td>
-                        <td>${placa.propietario}</td>
+                        <td>${placa.modelo_auto || '-'}</td>
+                        <td>${placa.color_auto || '-'}</td>
+                        <td>${placa.nombre_propietario || placa.propietario || 'Sin especificar'}</td>
+                        <td>${placa.dni_propietario || '-'}</td>
                         <td>
                             <button onclick="abrirModalEditar('${placaCodificada}')" style="padding: 5px 10px; margin-right: 5px; background-color: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer;">Editar</button>
                             <button onclick="eliminarPlaca('${placa.placa}')" style="padding: 5px 10px; background-color: #ef4444; color: white; border: none; border-radius: 3px; cursor: pointer;">Eliminar</button>
@@ -802,15 +957,17 @@
                 tbody.innerHTML = '';
                 
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">No hay movimientos registrados</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No hay movimientos registrados</td></tr>';
                     return;
                 }
                 
                 data.forEach(mov => {
                     const row = `<tr>
                         <td>${mov.placa}</td>
-                        <td>${mov.accion}</td>
+                        <td>${mov.propietario || 'Sin especificar'}</td>
                         <td>${mov.entrada}</td>
+                        <td>${mov.salida || '-'}</td>
+                        <td>${mov.tiempo || '-'}</td>
                         <td>${mov.monto}</td>
                     </tr>`;
                     tbody.innerHTML += row;
@@ -829,9 +986,8 @@
                 const movimientos = await movRes.json();
                 document.getElementById('metric-placas').textContent = placas.length;
                 document.getElementById('metric-movimientos').textContent = movimientos.length;
-                const entradas = movimientos.filter(m => String(m.accion).toUpperCase() === 'ENTRADA').length;
-                const salidas = movimientos.filter(m => String(m.accion).toUpperCase() === 'SALIDA').length;
-                document.getElementById('metric-activos').textContent = Math.max(0, entradas - salidas);
+                const activos = movimientos.filter(m => !m.salida).length;
+                document.getElementById('metric-activos').textContent = activos;
                 const total = movimientos.reduce((acum, m) => acum + (parseFloat(String(m.monto || 0).replace('S/', '')) || 0), 0);
                 document.getElementById('metric-ingresos').textContent = `S/ ${total.toFixed(2)}`;
 
@@ -868,7 +1024,7 @@
                     return `<div class="${clases}" data-day="${etiqueta}" data-count="${contador}" style="--bar-height:${altura}%" title="${cantidad} movimiento(s)">${barra}</div>`;
                 }).join('');
                 const recientes = document.getElementById('dashboard-recientes');
-                recientes.innerHTML = movimientos.slice(0, 4).map(m => `<div class="recent-item"><i class="recent-dot"></i><strong>${m.placa || 'N/A'}</strong><small>${m.accion || 'MOVIMIENTO'}</small></div>`).join('') || '<p>Aún no hay movimientos registrados.</p>';
+                recientes.innerHTML = movimientos.slice(0, 4).map(m => `<div class="recent-item"><i class="recent-dot"></i><strong>${m.placa || 'N/A'}</strong><small>${m.salida ? 'Finalizado' : 'Dentro'}</small></div>`).join('') || '<p>Aún no hay movimientos registrados.</p>';
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
             }
@@ -878,7 +1034,10 @@
         async function guardarPlaca(event) {
             event.preventDefault();
             const placa = document.getElementById('input-placa').value.toUpperCase();
-            const propietario = document.getElementById('input-propietario').value || 'Sin especificar';
+            const modelo_auto = document.getElementById('input-modelo-auto').value.trim();
+            const color_auto = document.getElementById('input-color-auto').value.trim();
+            const nombre_propietario = document.getElementById('input-nombre-propietario').value.trim() || 'Sin especificar';
+            const dni_propietario = document.getElementById('input-dni-propietario').value.trim();
             
             // Obtener CSRF token
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -900,7 +1059,7 @@
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({ placa, propietario })
+                    body: JSON.stringify({ placa, modelo_auto, color_auto, nombre_propietario, dni_propietario })
                 });
                 
                 if (response.ok) {
@@ -962,7 +1121,92 @@
         function cerrarModal() {
             document.getElementById('modal-agregar').classList.remove('activo');
             document.getElementById('input-placa').value = '';
-            document.getElementById('input-propietario').value = '';
+            document.getElementById('input-modelo-auto').value = '';
+            document.getElementById('input-color-auto').value = '';
+            document.getElementById('input-nombre-propietario').value = '';
+            document.getElementById('input-dni-propietario').value = '';
+        }
+
+        // Reportes de movimientos
+        function fechaLocalISO(fecha = new Date()) {
+            const anio = fecha.getFullYear();
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            return `${anio}-${mes}-${dia}`;
+        }
+
+        function inicializarReporte() {
+            const hoy = new Date();
+            const hoyISO = fechaLocalISO(hoy);
+            document.getElementById('reporte-fecha').value = hoyISO;
+            document.getElementById('reporte-desde').value = hoyISO;
+            document.getElementById('reporte-hasta').value = hoyISO;
+            document.getElementById('reporte-mes').value = String(hoy.getMonth() + 1);
+            document.getElementById('reporte-anio').value = hoy.getFullYear();
+            actualizarCamposReporte();
+        }
+
+        function abrirModalReporte() {
+            inicializarReporte();
+            document.getElementById('modal-reporte').classList.add('activo');
+        }
+
+        function cerrarModalReporte() {
+            document.getElementById('modal-reporte').classList.remove('activo');
+        }
+
+        function actualizarCamposReporte() {
+            const tipo = document.getElementById('reporte-tipo').value;
+            document.querySelectorAll('.campo-reporte').forEach(campo => {
+                const visible = campo.dataset.reporteCampo.split(' ').includes(tipo);
+                campo.classList.toggle('campo-oculto', !visible);
+            });
+        }
+
+        function nombreArchivoDesdeRespuesta(response) {
+            const disposicion = response.headers.get('Content-Disposition') || '';
+            const coincidencia = disposicion.match(/filename="?([^"]+)"?/);
+            return coincidencia ? coincidencia[1] : 'reporte_movimientos.xlsx';
+        }
+
+        async function generarReporteMovimientos(event) {
+            event.preventDefault();
+            const tipo = document.getElementById('reporte-tipo').value;
+            const params = new URLSearchParams({ tipo });
+
+            if (tipo === 'dia') {
+                params.set('fecha', document.getElementById('reporte-fecha').value);
+            } else if (tipo === 'rango') {
+                params.set('desde', document.getElementById('reporte-desde').value);
+                params.set('hasta', document.getElementById('reporte-hasta').value);
+            } else if (tipo === 'mes') {
+                params.set('mes', document.getElementById('reporte-mes').value);
+                params.set('anio', document.getElementById('reporte-anio').value);
+            } else if (tipo === 'anio') {
+                params.set('anio', document.getElementById('reporte-anio').value);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/web/reportes/movimientos.xlsx/?${params.toString()}`);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ error: 'No se pudo generar el reporte.' }));
+                    alert(`Error: ${error.error || 'No se pudo generar el reporte.'}`);
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const enlace = document.createElement('a');
+                enlace.href = url;
+                enlace.download = nombreArchivoDesdeRespuesta(response);
+                document.body.appendChild(enlace);
+                enlace.click();
+                enlace.remove();
+                URL.revokeObjectURL(url);
+                cerrarModalReporte();
+            } catch (error) {
+                alert(`Error al descargar el reporte: ${error}`);
+            }
         }
 
         // Edición de placas
@@ -976,7 +1220,10 @@
 
             placaOriginalEnEdicion = placaOriginal;
             document.getElementById('editar-placa').value = registro.placa;
-            document.getElementById('editar-propietario').value = registro.propietario;
+            document.getElementById('editar-modelo-auto').value = registro.modelo_auto || '';
+            document.getElementById('editar-color-auto').value = registro.color_auto || '';
+            document.getElementById('editar-nombre-propietario').value = registro.nombre_propietario || registro.propietario || '';
+            document.getElementById('editar-dni-propietario').value = registro.dni_propietario || '';
             document.getElementById('modal-editar').classList.add('activo');
             document.getElementById('editar-placa').focus();
         }
@@ -989,7 +1236,10 @@
         async function actualizarPlaca(event) {
             event.preventDefault();
             const placa = document.getElementById('editar-placa').value.trim().toUpperCase();
-            const propietario = document.getElementById('editar-propietario').value.trim() || 'Sin especificar';
+            const modelo_auto = document.getElementById('editar-modelo-auto').value.trim();
+            const color_auto = document.getElementById('editar-color-auto').value.trim();
+            const nombre_propietario = document.getElementById('editar-nombre-propietario').value.trim() || 'Sin especificar';
+            const dni_propietario = document.getElementById('editar-dni-propietario').value.trim();
 
             if (!placaOriginalEnEdicion || !placa) {
                 alert('Debe ingresar una placa válida.');
@@ -1002,7 +1252,7 @@
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ placa, propietario })
+                        body: JSON.stringify({ placa, modelo_auto, color_auto, nombre_propietario, dni_propietario })
                     }
                 );
                 const data = await response.json();

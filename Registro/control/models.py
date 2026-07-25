@@ -3,10 +3,20 @@ from django.db import models
 class Registrada(models.Model):
     placa = models.CharField(max_length=10, unique=True)
     propietario = models.CharField(max_length=100, default="Sin especificar")
+    nombre_propietario = models.CharField(max_length=100, default="Sin especificar")
+    dni_propietario = models.CharField(max_length=12, blank=True, default="")
+    modelo_auto = models.CharField(max_length=80, blank=True, default="")
+    color_auto = models.CharField(max_length=40, blank=True, default="")
     activo = models.BooleanField(default=True)
 
+    def save(self, *args, **kwargs):
+        if not self.nombre_propietario:
+            self.nombre_propietario = self.propietario or "Sin especificar"
+        self.propietario = self.nombre_propietario
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.placa} - {self.propietario}"
+        return f"{self.placa} - {self.nombre_propietario}"
 
 
 class Entrada(models.Model):

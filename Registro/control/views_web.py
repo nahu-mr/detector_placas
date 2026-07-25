@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from .models import Registrada, Entrada
 from django.utils import timezone
 import json
@@ -13,10 +13,15 @@ import os
 import threading
 import time
 from queue import Queue
+from datetime import datetime, timedelta
+import io
+import zipfile
+from xml.sax.saxutils import escape
 
 # Agregar la ruta del proyecto para importar detector
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from detector import detectar_placas
+from .views import calcular_monto_estacionamiento
 
 # Variables globales para la cámara
 camera_lock = threading.Lock()
@@ -39,7 +44,10 @@ def dashboard(request):
 @require_http_methods(["GET"])
 def get_placas(request):
     """API para obtener placas registradas"""
-    placas = Registrada.objects.filter(activo=True).values('id', 'placa', 'propietario')
+    placas = Registrada.objects.filter(activo=True).values(
+        'id', 'placa', 'propietario', 'nombre_propietario',
+        'dni_propietario', 'modelo_auto', 'color_auto'
+    )
     return JsonResponse(list(placas), safe=False)
 
 @require_http_methods(["GET"])
@@ -48,15 +56,27 @@ def get_movimientos(request):
     movimientos = Entrada.objects.all().order_by('-entrada').values(
         'placa', 'entrada', 'salida', 'monto', 'procesada'
     )[:50]
+    propietarios = {
+        registro.placa: registro.nombre_propietario
+        for registro in Registrada.objects.filter(
+            placa__in=[mov['placa'] for mov in movimientos]
+        )
+    }
     
     result = []
     for mov in movimientos:
+        fin = mov['salida'] or timezone.now()
+        duracion = fin - mov['entrada'] if mov['entrada'] else timedelta()
+        total_segundos = max(0, int(duracion.total_seconds()))
+        horas = total_segundos // 3600
+        minutos = (total_segundos % 3600) // 60
         result.append({
             'placa': mov['placa'],
+            'propietario': propietarios.get(mov['placa'], 'Sin especificar'),
             'entrada': formatear_hora_local(mov['entrada']),
             'salida': formatear_hora_local(mov['salida']),
+            'tiempo': f"{horas}h {minutos} min" if horas else f"{minutos} min",
             'monto': f"S/ {mov['monto']:.2f}" if mov['procesada'] else '-',
-            'accion': 'SALIDA' if mov['salida'] else 'ENTRADA'
         })
     return JsonResponse(result, safe=False)
 
@@ -67,7 +87,10 @@ def add_placa(request):
     try:
         data = json.loads(request.body)
         placa = data.get('placa', '').strip().upper()
-        propietario = data.get('propietario', 'Sin especificar').strip()
+        nombre_propietario = data.get('nombre_propietario', data.get('propietario', 'Sin especificar')).strip() or 'Sin especificar'
+        dni_propietario = data.get('dni_propietario', '').strip()
+        modelo_auto = data.get('modelo_auto', '').strip()
+        color_auto = data.get('color_auto', '').strip()
         
         if not placa:
             return JsonResponse({'error': 'Placa vacía'}, status=400)
@@ -75,8 +98,24 @@ def add_placa(request):
         if Registrada.objects.filter(placa=placa).exists():
             return JsonResponse({'error': 'La placa ya existe'}, status=400)
         
-        nueva = Registrada.objects.create(placa=placa, propietario=propietario, activo=True)
-        return JsonResponse({'success': True, 'placa': nueva.placa}, status=201)
+        nueva = Registrada.objects.create(
+            placa=placa,
+            propietario=nombre_propietario,
+            nombre_propietario=nombre_propietario,
+            dni_propietario=dni_propietario,
+            modelo_auto=modelo_auto,
+            color_auto=color_auto,
+            activo=True
+        )
+        return JsonResponse({
+            'success': True,
+            'placa': nueva.placa,
+            'propietario': nueva.propietario,
+            'nombre_propietario': nueva.nombre_propietario,
+            'dni_propietario': nueva.dni_propietario,
+            'modelo_auto': nueva.modelo_auto,
+            'color_auto': nueva.color_auto,
+        }, status=201)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -95,12 +134,15 @@ def delete_placa(request, placa):
 @require_http_methods(["PUT"])
 @csrf_exempt
 def update_placa(request, placa):
-    """Actualiza la placa y/o el propietario de un registro autorizado."""
+    """Actualiza los datos de un registro autorizado."""
     try:
         registro = Registrada.objects.get(placa=placa.upper())
         data = json.loads(request.body)
         nueva_placa = data.get('placa', registro.placa).strip().upper()
-        propietario = data.get('propietario', '').strip() or 'Sin especificar'
+        nombre_propietario = data.get('nombre_propietario', data.get('propietario', '')).strip() or 'Sin especificar'
+        dni_propietario = data.get('dni_propietario', '').strip()
+        modelo_auto = data.get('modelo_auto', '').strip()
+        color_auto = data.get('color_auto', '').strip()
 
         if not nueva_placa:
             return JsonResponse({'error': 'La placa no puede estar vacía'}, status=400)
@@ -109,12 +151,20 @@ def update_placa(request, placa):
             return JsonResponse({'error': 'La placa ya existe'}, status=400)
 
         registro.placa = nueva_placa
-        registro.propietario = propietario
+        registro.propietario = nombre_propietario
+        registro.nombre_propietario = nombre_propietario
+        registro.dni_propietario = dni_propietario
+        registro.modelo_auto = modelo_auto
+        registro.color_auto = color_auto
         registro.save()
         return JsonResponse({
             'success': True,
             'placa': registro.placa,
             'propietario': registro.propietario,
+            'nombre_propietario': registro.nombre_propietario,
+            'dni_propietario': registro.dni_propietario,
+            'modelo_auto': registro.modelo_auto,
+            'color_auto': registro.color_auto,
         })
     except Registrada.DoesNotExist:
         return JsonResponse({'error': 'Placa no encontrada'}, status=404)
@@ -328,9 +378,7 @@ def procesar_placa_async(placa):
             salida = timezone.now()
             duracion_segundos = (salida - entrada.entrada).total_seconds()
             duracion_minutos = round(duracion_segundos / 60, 1)
-            
-            tarifa_minuto = 0.15
-            monto = round(duracion_minutos * tarifa_minuto, 2)
+            monto = calcular_monto_estacionamiento(duracion_segundos)
             
             entrada.salida = salida
             entrada.monto = monto
@@ -381,9 +429,7 @@ def registrar_salida(request):
         salida = timezone.now()
         duracion_segundos = (salida - entrada.entrada).total_seconds()
         duracion_minutos = duracion_segundos / 60
-        
-        tarifa_minuto = 0.15
-        monto = round(duracion_minutos * tarifa_minuto, 2)
+        monto = calcular_monto_estacionamiento(duracion_segundos)
         
         entrada.salida = salida
         entrada.monto = monto
@@ -413,6 +459,187 @@ def clear_movimientos(request):
         }, status=200)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def _parse_fecha(valor):
+    return datetime.strptime(valor, "%Y-%m-%d").date()
+
+
+def _rango_reporte(request):
+    tipo = request.GET.get('tipo', 'dia')
+    hoy = timezone.localdate()
+
+    if tipo == 'rango':
+        inicio = _parse_fecha(request.GET.get('desde') or hoy.isoformat())
+        fin = _parse_fecha(request.GET.get('hasta') or inicio.isoformat())
+    elif tipo == 'mes':
+        anio = int(request.GET.get('anio') or hoy.year)
+        mes = int(request.GET.get('mes') or hoy.month)
+        inicio = datetime(anio, mes, 1).date()
+        if mes == 12:
+            fin = datetime(anio, 12, 31).date()
+        else:
+            fin = datetime(anio, mes + 1, 1).date() - timedelta(days=1)
+    elif tipo == 'anio':
+        anio = int(request.GET.get('anio') or hoy.year)
+        inicio = datetime(anio, 1, 1).date()
+        fin = datetime(anio, 12, 31).date()
+    else:
+        inicio = _parse_fecha(request.GET.get('fecha') or hoy.isoformat())
+        fin = inicio
+
+    if fin < inicio:
+        inicio, fin = fin, inicio
+
+    inicio_dt = timezone.make_aware(datetime.combine(inicio, datetime.min.time()))
+    fin_exclusivo = timezone.make_aware(datetime.combine(fin + timedelta(days=1), datetime.min.time()))
+    etiqueta = f"{inicio.strftime('%Y%m%d')}_{fin.strftime('%Y%m%d')}"
+    return inicio_dt, fin_exclusivo, etiqueta
+
+
+def _duracion_texto(inicio, fin):
+    if not inicio:
+        return "-"
+    fin = fin or timezone.now()
+    total_segundos = max(0, int((fin - inicio).total_seconds()))
+    horas = total_segundos // 3600
+    minutos = (total_segundos % 3600) // 60
+    return f"{horas}h {minutos}min" if horas else f"{minutos}min"
+
+
+def _xlsx_cell(valor, fila, columna):
+    letras = ""
+    indice = columna
+    while indice:
+        indice, resto = divmod(indice - 1, 26)
+        letras = chr(65 + resto) + letras
+    referencia = f"{letras}{fila}"
+    texto = escape("" if valor is None else str(valor))
+    return f'<c r="{referencia}" t="inlineStr"><is><t>{texto}</t></is></c>'
+
+
+def _crear_worksheet(filas):
+    sheet_rows = []
+    for numero_fila, fila in enumerate(filas, start=1):
+        celdas = ''.join(_xlsx_cell(valor, numero_fila, indice) for indice, valor in enumerate(fila, start=1))
+        sheet_rows.append(f'<row r="{numero_fila}">{celdas}</row>')
+
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        '<sheetData>' + ''.join(sheet_rows) + '</sheetData></worksheet>'
+    )
+
+
+def _crear_xlsx(hojas):
+    buffer = io.BytesIO()
+    sheets_xml = ''.join(
+        f'<sheet name="{escape(nombre)}" sheetId="{indice}" r:id="rId{indice}"/>'
+        for indice, (nombre, _) in enumerate(hojas, start=1)
+    )
+    workbook = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        f'<sheets>{sheets_xml}</sheets></workbook>'
+    )
+    rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+        '</Relationships>'
+    )
+    workbook_rels_items = ''.join(
+        f'<Relationship Id="rId{indice}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{indice}.xml"/>'
+        for indice, _ in enumerate(hojas, start=1)
+    )
+    workbook_rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        f'{workbook_rels_items}</Relationships>'
+    )
+    worksheet_types = ''.join(
+        f'<Override PartName="/xl/worksheets/sheet{indice}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        for indice, _ in enumerate(hojas, start=1)
+    )
+    content_types = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        f'{worksheet_types}</Types>'
+    )
+
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archivo:
+        archivo.writestr('[Content_Types].xml', content_types)
+        archivo.writestr('_rels/.rels', rels)
+        archivo.writestr('xl/workbook.xml', workbook)
+        archivo.writestr('xl/_rels/workbook.xml.rels', workbook_rels)
+        for indice, (_, filas) in enumerate(hojas, start=1):
+            archivo.writestr(f'xl/worksheets/sheet{indice}.xml', _crear_worksheet(filas))
+    return buffer.getvalue()
+
+
+@require_http_methods(["GET"])
+def exportar_reporte_movimientos(request):
+    """Descarga un reporte Excel de movimientos filtrado por fecha."""
+    try:
+        inicio_dt, fin_dt, etiqueta = _rango_reporte(request)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Filtros de fecha invalidos'}, status=400)
+
+    movimientos = list(Entrada.objects.filter(
+        entrada__gte=inicio_dt,
+        entrada__lt=fin_dt
+    ).order_by('entrada'))
+    propietarios = {
+        registro.placa: registro.nombre_propietario
+        for registro in Registrada.objects.filter(
+            placa__in=[movimiento.placa for movimiento in movimientos]
+        )
+    }
+
+    total_finalizados = sum(1 for movimiento in movimientos if movimiento.salida)
+    total_dentro = len(movimientos) - total_finalizados
+    total_monto = sum(float(movimiento.monto) for movimiento in movimientos if movimiento.procesada)
+    resumen = [
+        ['Reporte de movimientos'],
+        ['Generado', formatear_hora_local(timezone.now())],
+        ['Desde', formatear_hora_local(inicio_dt)],
+        ['Hasta', formatear_hora_local(fin_dt - timedelta(seconds=1))],
+        ['Total movimientos', len(movimientos)],
+        ['Finalizados', total_finalizados],
+        ['Dentro', total_dentro],
+        ['Monto total', f"S/ {total_monto:.2f}"],
+    ]
+
+    detalle = [[
+        'Placa', 'Propietario', 'Entrada', 'Salida',
+        'Tiempo', 'Monto', 'Estado'
+    ]]
+    for movimiento in movimientos:
+        detalle.append([
+            movimiento.placa,
+            propietarios.get(movimiento.placa, 'Sin especificar'),
+            formatear_hora_local(movimiento.entrada),
+            formatear_hora_local(movimiento.salida),
+            _duracion_texto(movimiento.entrada, movimiento.salida),
+            f"S/ {float(movimiento.monto):.2f}" if movimiento.procesada else "-",
+            'Finalizado' if movimiento.salida else 'Dentro',
+        ])
+
+    contenido = _crear_xlsx([
+        ('Resumen', resumen),
+        ('Movimientos', detalle),
+    ])
+    nombre = f"reporte_movimientos_{etiqueta}.xlsx"
+    response = HttpResponse(
+        contenido,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{nombre}"'
+    return response
 
 
 def formatear_hora_local(fecha):

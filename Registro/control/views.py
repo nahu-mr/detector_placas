@@ -6,14 +6,30 @@ import json
 from .models import Registrada, Entrada
 from math import ceil
 
-TARIFA_MINUTO = 0.15
+MINUTOS_GRATIS = 5
+TARIFA_BASE = 5.00
+TARIFA_MINUTO_ADICIONAL = 0.15
+
+
+def calcular_monto_estacionamiento(segundos):
+    """Calcula el cobro: menos de 5 min gratis; desde 5 min cobra base + adicional."""
+    segundos = max(0, segundos)
+    segundos_gratis = MINUTOS_GRATIS * 60
+    if segundos < segundos_gratis:
+        return 0.00
+
+    minutos_adicionales = ceil((segundos - segundos_gratis) / 60)
+    return round(TARIFA_BASE + (minutos_adicionales * TARIFA_MINUTO_ADICIONAL), 2)
 
 
 @csrf_exempt
 def listar_placas(request):
     """GET /api/placas/ - Lista todas las placas registradas"""
     if request.method == 'GET':
-        placas = Registrada.objects.filter(activo=True).values('id', 'placa', 'propietario')
+        placas = Registrada.objects.filter(activo=True).values(
+            'id', 'placa', 'propietario', 'nombre_propietario',
+            'dni_propietario', 'modelo_auto', 'color_auto'
+        )
         return JsonResponse(list(placas), safe=False)
     
     """POST /api/placas/ - Registra una nueva placa"""
@@ -21,7 +37,10 @@ def listar_placas(request):
         try:
             data = json.loads(request.body)
             placa = data.get("placa", "").strip().upper()
-            propietario = data.get("propietario", "Sin especificar").strip()
+            nombre_propietario = data.get("nombre_propietario", data.get("propietario", "Sin especificar")).strip() or "Sin especificar"
+            dni_propietario = data.get("dni_propietario", "").strip()
+            modelo_auto = data.get("modelo_auto", "").strip()
+            color_auto = data.get("color_auto", "").strip()
 
             if not placa:
                 return JsonResponse({"error": "Placa vacía"}, status=400)
@@ -33,16 +52,24 @@ def listar_placas(request):
             # Crear nueva placa
             nueva_placa = Registrada.objects.create(
                 placa=placa,
-                propietario=propietario,
+                propietario=nombre_propietario,
+                nombre_propietario=nombre_propietario,
+                dni_propietario=dni_propietario,
+                modelo_auto=modelo_auto,
+                color_auto=color_auto,
                 activo=True
             )
             
-            print(f"✅ Placa registrada: {placa} - {propietario}")
+            print(f"✅ Placa registrada: {placa} - {nombre_propietario}")
             
             return JsonResponse({
                 "id": nueva_placa.id,
                 "placa": nueva_placa.placa,
-                "propietario": nueva_placa.propietario
+                "propietario": nueva_placa.propietario,
+                "nombre_propietario": nueva_placa.nombre_propietario,
+                "dni_propietario": nueva_placa.dni_propietario,
+                "modelo_auto": nueva_placa.modelo_auto,
+                "color_auto": nueva_placa.color_auto
             }, status=201)
 
         except Exception as e:
@@ -120,8 +147,7 @@ def registrar_salida(request):
             # Calcular tiempo y monto
             ahora = timezone.now()
             segundos = (ahora - entrada.entrada).total_seconds()
-            minutos = ceil(segundos / 60)
-            monto = round(minutos * TARIFA_MINUTO, 2)
+            monto = calcular_monto_estacionamiento(segundos)
 
             # Actualizar entrada
             entrada.salida = ahora
@@ -150,25 +176,28 @@ def listar_movimientos(request):
     if request.method == 'GET':
         try:
             entradas = Entrada.objects.all().order_by('-entrada')
+            propietarios = {
+                registro.placa: registro.nombre_propietario
+                for registro in Registrada.objects.filter(
+                    placa__in=[entrada.placa for entrada in entradas]
+                )
+            }
             
             movimientos = []
             for e in entradas:
-                # Entrada
+                fin = e.salida or timezone.now()
+                duracion = fin - e.entrada
+                total_segundos = max(0, int(duracion.total_seconds()))
+                horas = total_segundos // 3600
+                minutos = (total_segundos % 3600) // 60
                 movimientos.append({
                     "placa": e.placa,
-                    "accion": "ENTRADA",
-                    "fecha": e.entrada.strftime("%d/%m/%Y %H:%M:%S"),
-                    "monto": "-"
+                    "propietario": propietarios.get(e.placa, "Sin especificar"),
+                    "entrada": e.entrada.strftime("%d/%m/%Y %H:%M:%S"),
+                    "salida": e.salida.strftime("%d/%m/%Y %H:%M:%S") if e.salida else "",
+                    "tiempo": f"{horas}h {minutos} min" if horas else f"{minutos} min",
+                    "monto": f"S/ {float(e.monto):.2f}" if e.procesada else "-"
                 })
-                
-                # Salida (si existe)
-                if e.procesada and e.salida:
-                    movimientos.append({
-                        "placa": e.placa,
-                        "accion": "SALIDA",
-                        "fecha": e.salida.strftime("%d/%m/%Y %H:%M:%S"),
-                        "monto": f"S/ {float(e.monto):.2f}"
-                    })
             
             return JsonResponse(movimientos, safe=False)
             
