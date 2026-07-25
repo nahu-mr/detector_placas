@@ -27,7 +27,7 @@ from .views import calcular_monto_estacionamiento
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 DETECTION_INTERVAL_SECONDS = 0.7
-STREAM_JPEG_QUALITY = 65
+STREAM_JPEG_QUALITY = 80
 camera_lock = threading.Lock()
 cap = None
 current_frame = None
