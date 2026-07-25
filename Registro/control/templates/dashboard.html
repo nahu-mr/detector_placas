@@ -499,6 +499,26 @@
         #modal-agregar .boton-cancelar:hover, #modal-editar .boton-cancelar:hover { background:#e2e8f0; color:#26364a; }
         @media (max-width:600px) { #modal-agregar .modal-contenido, #modal-editar .modal-contenido { max-width:94%; padding:24px 20px; } #modal-agregar form, #modal-editar form { grid-template-columns:1fr; } #modal-agregar .form-group, #modal-editar .form-group { grid-column:1 / -1; } }
 
+        /* Reporte con la misma estructura visual del formulario de placas */
+        #modal-reporte { background:rgba(8,25,46,.58); backdrop-filter:blur(3px); }
+        #modal-reporte .modal-contenido { border:1px solid #e3eaf2; border-radius:14px; box-shadow:0 20px 55px rgba(7,24,45,.25); max-width:620px; padding:28px; position:relative; width:620px; }
+        #modal-reporte .modal-titulo { color:#10233f; font-size:21px; margin:3px 0 8px; }
+        #modal-reporte .modal-ayuda { color:#64748b; margin:0 0 20px; }
+        #modal-reporte form { display:grid; gap:16px; grid-template-columns:repeat(2, minmax(0,1fr)); }
+        #modal-reporte form > .form-group { grid-column:1 / -1; margin:0; }
+        #modal-reporte .modal-grid { display:contents; }
+        #modal-reporte .form-group { margin:0; }
+        #modal-reporte .form-group label { color:#4a5b70; font-size:12px; font-weight:650; margin-bottom:7px; }
+        #modal-reporte .form-group input, #modal-reporte .form-group select { background:#fff; border:1px solid #dce4ed; border-radius:7px; font-family:inherit; font-size:14px; padding:11px 12px; }
+        #modal-reporte .form-group input:focus, #modal-reporte .form-group select:focus { border-color:#2f78a7; box-shadow:0 0 0 3px rgba(47,120,167,.12); outline:0; }
+        #modal-reporte form > div:last-child { border-top:1px solid #e8edf3; display:flex; gap:10px; grid-column:1 / -1; justify-content:flex-end; margin-top:6px !important; padding-top:20px; }
+        #modal-reporte .boton-form { border-radius:7px; font-family:inherit; font-size:13px; margin:0; padding:10px 16px; }
+        #modal-reporte .boton-guardar { background:#0b2b51; }
+        #modal-reporte .boton-guardar:hover { background:#16446f; }
+        #modal-reporte .boton-cancelar { background:#eef2f6; color:#526174; }
+        #modal-reporte .boton-cancelar:hover { background:#e2e8f0; color:#26364a; }
+        @media (max-width:600px) { #modal-reporte .modal-contenido { max-width:94%; padding:24px 20px; } #modal-reporte form { grid-template-columns:1fr; } }
+
         /* Alertas */
         .alerta {
             padding: 15px;
@@ -670,7 +690,7 @@
         .contenedor-tarjeta { padding:24px; border-radius:12px; box-shadow:none; border:1px solid #e7ecf3; }
         .titulo-seccion { color:#10233f; text-transform:none; letter-spacing:0; }
         .dashboard { padding:26px; }
-        .metricas { display:grid; grid-template-columns:repeat(4, minmax(145px, 1fr)); gap:12px; margin-bottom:14px; }
+        .metricas { display:grid; grid-template-columns:repeat(5, minmax(145px, 1fr)); gap:12px; margin-bottom:14px; }
         .metrica { min-height:130px; padding:20px; border-radius:15px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; box-shadow:0 10px 24px rgba(16,35,63,.09); transition:transform .2s ease, box-shadow .2s ease; }
         .metrica:hover { transform:translateY(-4px); box-shadow:0 16px 30px rgba(16,35,63,.16); }
         .metrica-icon { position:absolute; right:18px; top:16px; width:42px; height:42px; border-radius:13px; display:grid; place-items:center; background:rgba(255,255,255,.22); z-index:1; box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
@@ -679,10 +699,11 @@
         .metrica span, .metrica strong { position:relative; z-index:2; }
         .metrica span { font-size:11px; font-weight:700; letter-spacing:.45px; opacity:.92; }
         .metrica strong { font-size:31px; line-height:1; letter-spacing:-.8px; }
-        .m1 { background:linear-gradient(135deg,#f5f1e9,#e8dfd0); color:#10233f; } .m1 .metrica-icon { background:rgba(255,255,255,.56); }
-        .m2 { background:linear-gradient(135deg,#1599d6,#0876b5); color:#fff; }
-        .m3 { background:linear-gradient(135deg,#56d3ed,#27b2d5); color:#10233f; } .m3 .metrica-icon { background:rgba(255,255,255,.32); }
-        .m4 { background:linear-gradient(135deg,#33689d,#163c62); color:#fff; } .m4 .metrica-icon { background:rgba(255,255,255,.24); }
+        .m1 { background:linear-gradient(135deg,#8ecae6,#8ecae6); color:#10233f; } .m1 .metrica-icon { background:rgba(255,255,255,.56); }
+        .m2 { background:linear-gradient(135deg,#81c3d3,#219ebc); color:#fff; }
+        .m3 { background:linear-gradient(135deg,#7094a8,#255770); color:#fff; } .m3 .metrica-icon { background:rgba(255,255,255,.32); }
+        .m4 { background:linear-gradient(135deg,#e1c581,#ffb703); color:#fff; } .m4 .metrica-icon { background:rgba(255,255,255,.24); }
+        .m5 { background:linear-gradient(135deg,#7cc3af,#7c9885); color:#fff; } .m5 .metrica-icon { background:rgba(255,255,255,.24); }
         .dash-grid { display:grid; grid-template-columns:1.25fr .75fr; gap:14px; }
         .dash-card { background:#fff; border:1px solid #e7ecf3; border-radius:12px; padding:18px; min-width:0; }
         .activity-card { overflow:hidden; }
@@ -809,6 +830,10 @@
                     <article class="metrica m4">
                         <i class="metrica-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M16 7.5c-.6-1.1-2-1.8-4-1.8-2.5 0-4 1.2-4 3s1.5 2.7 4 3.3 4 1.5 4 3.3-1.5 3-4 3c-2 0-3.5-.7-4.2-1.9"></path></svg></i>
                         <span>INGRESOS REGISTRADOS</span><strong id="metric-ingresos">S/ --</strong>
+                    </article>
+                    <article class="metrica m5">
+                        <i class="metrica-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M16 7.5c-.6-1.1-2-1.8-4-1.8-2.5 0-4 1.2-4 3s1.5 2.7 4 3.3 4 1.5 4 3.3-1.5 3-4 3c-2 0-3.5-.7-4.2-1.9"></path></svg></i>
+                        <span>INGRESOS DIARIOS</span><strong id="metric-ingresos-hoy">S/ --</strong>
                     </article>
                 </div>
                 <div class="dash-grid">
@@ -1202,6 +1227,7 @@
                 const activos = movimientos.filter(m => !m.salida).length;
                 document.getElementById('metric-activos').textContent = activos;
                 document.getElementById('metric-ingresos').textContent = `S/ ${Number(estadisticas.total_ingresos || 0).toFixed(2)}`;
+                document.getElementById('metric-ingresos-hoy').textContent = `S/ ${Number(estadisticas.ingresos_hoy || 0).toFixed(2)}`;
 
                 const hoy = new Date();
                 hoy.setHours(0, 0, 0, 0);
@@ -1720,6 +1746,13 @@
             const opcion = opcionesMenu[indice];
             if (opcion) boton.innerHTML = `${opcion[1]}<span>${opcion[0]}</span>`;
             boton.classList.toggle('activo', indice === 0);
+
+            boton.addEventListener('click', () => {
+                panelLateral.querySelectorAll('.boton-menu').forEach(item => {
+                    item.classList.remove('activo');
+                });
+                boton.classList.add('activo');
+            });
         });
 
         document.querySelector('#modal-agregar .boton-guardar').textContent = 'Guardar';

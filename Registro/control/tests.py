@@ -39,3 +39,4 @@ class EstadisticasDashboardTests(TestCase):
         datos = json.loads(response.content)
         self.assertEqual(datos['ingresos_por_dia']['2026-07-18'], 0.0)
         self.assertEqual(datos['ingresos_por_dia']['2026-07-19'], 7.5)
+        self.assertEqual(datos['ingresos_hoy'], 7.5)

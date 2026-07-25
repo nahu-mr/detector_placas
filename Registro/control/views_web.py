@@ -61,7 +61,7 @@ def get_movimientos(request):
     """API para obtener movimientos del día"""
     movimientos = Entrada.objects.all().order_by('-entrada').values(
         'placa', 'entrada', 'salida', 'monto', 'procesada'
-    )[:50]
+    )
     propietarios = {
         registro.placa: registro.nombre_propietario
         for registro in Registrada.objects.filter(
@@ -123,6 +123,7 @@ def get_estadisticas_dashboard(request):
         'fechas': [dia.isoformat() for dia in dias],
         'movimientos_por_dia': movimientos_por_dia,
         'ingresos_por_dia': ingresos_por_dia,
+        'ingresos_hoy': ingresos_por_dia[hoy.isoformat()],
         'total_ingresos': float(total_ingresos),
     })
 
