@@ -127,6 +127,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Rutas usadas por la autenticación nativa de Django.
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

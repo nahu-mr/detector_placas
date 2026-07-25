@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth.decorators import login_required
 from .views import (
     listar_placas, 
     eliminar_placa,
@@ -14,27 +15,27 @@ from .views_web import (
 
 urlpatterns = [
     # API endpoints
-    path("placas/", listar_placas, name="listar_placas"),
-    path("placas/<str:placa>/", eliminar_placa, name="eliminar_placa"),
-    path("entrada/", registrar_entrada, name="registrar_entrada"),
-    path("salida/", registrar_salida, name="registrar_salida"),
-    path("movimientos/", listar_movimientos, name="listar_movimientos"),
+    path("placas/", login_required(listar_placas), name="listar_placas"),
+    path("placas/<str:placa>/", login_required(eliminar_placa), name="eliminar_placa"),
+    path("entrada/", login_required(registrar_entrada), name="registrar_entrada"),
+    path("salida/", login_required(registrar_salida), name="registrar_salida"),
+    path("movimientos/", login_required(listar_movimientos), name="listar_movimientos"),
     
     # Web endpoints
-    path("", dashboard, name="dashboard"),
-    path("api/web/placas/", get_placas, name="api_placas"),
-    path("api/web/movimientos/", get_movimientos, name="api_movimientos"),
-    path("api/web/add-placa/", add_placa, name="add_placa"),
-    path("api/web/delete-placa/<str:placa>/", delete_placa, name="delete_placa_web"),
-    path("api/web/update-placa/<str:placa>/", update_placa, name="update_placa_web"),
-    path("api/web/clear-movimientos/", clear_movimientos, name="clear_movimientos"),
-    path("api/web/reportes/movimientos.xlsx/", exportar_reporte_movimientos, name="reporte_movimientos"),
+    path("", login_required(dashboard), name="dashboard"),
+    path("api/web/placas/", login_required(get_placas), name="api_placas"),
+    path("api/web/movimientos/", login_required(get_movimientos), name="api_movimientos"),
+    path("api/web/add-placa/", login_required(add_placa), name="add_placa"),
+    path("api/web/delete-placa/<str:placa>/", login_required(delete_placa), name="delete_placa_web"),
+    path("api/web/update-placa/<str:placa>/", login_required(update_placa), name="update_placa_web"),
+    path("api/web/clear-movimientos/", login_required(clear_movimientos), name="clear_movimientos"),
+    path("api/web/reportes/movimientos.xlsx/", login_required(exportar_reporte_movimientos), name="reporte_movimientos"),
     
     # Video streaming
-    path("video/", video_feed, name="video_feed"),
-    path("video/iniciar/", iniciar_streaming, name="iniciar_streaming"),
-    path("video/detener/", detener_streaming, name="detener_streaming"),
+    path("video/", login_required(video_feed), name="video_feed"),
+    path("video/iniciar/", login_required(iniciar_streaming), name="iniciar_streaming"),
+    path("video/detener/", login_required(detener_streaming), name="detener_streaming"),
     
     # Notificaciones en tiempo real
-    path("api/notificaciones/", notificaciones_stream, name="notificaciones_stream"),
+    path("api/notificaciones/", login_required(notificaciones_stream), name="notificaciones_stream"),
 ]
