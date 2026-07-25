@@ -1335,44 +1335,31 @@
         }
 
         // Cámara
+        let camaraIniciando = false;
+
         async function iniciarCamara() {
             const imgStream = document.getElementById('video-stream');
             const wrapper = document.getElementById('wrapper-video');
-            const imagenVacia = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-            
-            try {
-                // Limpiar cualquier stream anterior
-                imgStream.src = imagenVacia;
-                wrapper.removeAttribute('data-active');
-                await new Promise(resolve => setTimeout(resolve, 150));
-                
-                // Solicitar al servidor que inicie el streaming
-                const response = await fetch('/api/video/iniciar/', {
-                    method: 'POST'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('No se pudo iniciar el streaming');
-                }
-                
-                // Agregar timestamp para forzar recarga de stream
-                const timestamp = new Date().getTime();
-                imgStream.src = `/api/video/?t=${timestamp}`;
-                wrapper.setAttribute('data-active', 'true');
-                
-                console.log('Cámara iniciada - Mostrando stream MJPEG');
-                
-            } catch (error) {
-                console.error('Error iniciando cámara:', error);
-            }
-        }
 
+            if (camaraIniciando || wrapper.hasAttribute('data-active')) {
+                return;
+            }
+
+            camaraIniciando = true;
+            const timestamp = new Date().getTime();
+            imgStream.src = `/api/video/?t=${timestamp}`;
+            wrapper.setAttribute('data-active', 'true');
+            camaraIniciando = false;
+
+            console.log('Camara iniciada - Mostrando stream MJPEG');
+        }
         async function detenerCamara() {
             const imgStream = document.getElementById('video-stream');
             const wrapper = document.getElementById('wrapper-video');
             const imagenVacia = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
             
             try {
+                camaraIniciando = false;
                 imgStream.src = imagenVacia;
                 wrapper.removeAttribute('data-active');
 

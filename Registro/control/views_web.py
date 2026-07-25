@@ -24,6 +24,10 @@ from detector import detectar_placas
 from .views import calcular_monto_estacionamiento
 
 # Variables globales para la cámara
+CAMERA_WIDTH = 640
+CAMERA_HEIGHT = 480
+DETECTION_INTERVAL_SECONDS = 0.7
+STREAM_JPEG_QUALITY = 65
 camera_lock = threading.Lock()
 cap = None
 current_frame = None
@@ -174,38 +178,23 @@ def update_placa(request, placa):
 
 
 def iniciar_camara_streaming():
-    """Inicia la camara para streaming continuo con fallback de backend."""
+    """Inicia la camara para streaming continuo."""
     global cap, camera_stop_requested
     camera_stop_requested = False
     if cap is not None:
         return True
 
-    backends = (
-        (0, cv2.CAP_DSHOW),
-        (1, cv2.CAP_DSHOW),
-        (0, cv2.CAP_ANY),
-        (1, cv2.CAP_ANY),
-    )
-    for indice, backend in backends:
-        prueba = cv2.VideoCapture(indice, backend)
-        if not prueba.isOpened():
-            prueba.release()
-            continue
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    if not cap.isOpened():
+        cap.release()
+        cap = None
+        print("No se pudo iniciar la camara")
+        return False
 
-        prueba.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        prueba.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        prueba.set(cv2.CAP_PROP_FPS, 30)
-        ret, _ = prueba.read()
-        if ret:
-            cap = prueba
-            print(f"Camara iniciada para streaming (indice {indice})")
-            return True
-
-        prueba.release()
-
-    cap = None
-    print("No se pudo iniciar la camara: no entrega imagen")
-    return False
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+    print("Camara iniciada para streaming")
+    return True
 
 
 def detener_camara_streaming():
@@ -222,68 +211,96 @@ def detener_camara_streaming():
             print("❌ Cámara detenida correctamente")
 
 def generar_frames():
-    """Generador de frames para MJPEG streaming"""
+    """Generador de frames para MJPEG streaming."""
     global cap, current_frame, camera_stop_requested
-    
+
     iniciar_camara_streaming()
-    
+
     placas_procesadas = set()
     tiempo_limpieza = time.time()
-    
-    while cap is not None and not camera_stop_requested:  # Verificar que cap existe
+    ultima_deteccion = 0
+    placas_actuales = []
+    detectando = False
+    deteccion_lock = threading.Lock()
+
+    def detectar_en_segundo_plano(frame_para_detectar):
+        nonlocal placas_actuales, detectando, placas_procesadas, tiempo_limpieza
         try:
-            with camera_lock:  # Proteger acceso a cap
-                if cap is None:  # Si se detuvo durante la lectura, salir
-                    break
-                ret, frame = cap.read()
-            
-            if not ret:
-                time.sleep(0.1)  # Esperar un poco antes de reintentar
-                continue
-            
-            # Detectar placas
-            placas = detectar_placas(frame)
-            
-            # Procesar placas detectadas
-            for placa, (x1, y1, x2, y2) in placas:
-                # Dibujar rectángulo y texto
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 217, 255), 3)
-                cv2.putText(frame, placa, (x1, y1 - 15),
-                           cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 217, 255), 3)
-                
-                # Procesar si es nueva
+            placas = detectar_placas(frame_para_detectar)
+            tiempo_actual = time.time()
+
+            with deteccion_lock:
+                placas_actuales = placas
+
+            for placa, _coords in placas:
                 if placa not in placas_procesadas:
                     placas_procesadas.add(placa)
                     threading.Thread(target=procesar_placa_async, args=(placa,), daemon=True).start()
-            
-            # Limpiar placas antiguas cada 5 segundos
+
+            if tiempo_actual - tiempo_limpieza > 5:
+                placas_procesadas.clear()
+                tiempo_limpieza = tiempo_actual
+        except Exception as e:
+            print(f"Error detectando placas: {e}")
+        finally:
+            with deteccion_lock:
+                detectando = False
+
+    while cap is not None and not camera_stop_requested:
+        try:
+            with camera_lock:
+                if cap is None:
+                    break
+                ret, frame = cap.read()
+
+            if not ret:
+                time.sleep(0.05)
+                continue
+
+            tiempo_actual = time.time()
+            with deteccion_lock:
+                puede_detectar = not detectando and tiempo_actual - ultima_deteccion >= DETECTION_INTERVAL_SECONDS
+                if puede_detectar:
+                    detectando = True
+                    ultima_deteccion = tiempo_actual
+                placas = list(placas_actuales)
+
+            if puede_detectar:
+                threading.Thread(
+                    target=detectar_en_segundo_plano,
+                    args=(frame.copy(),),
+                    daemon=True
+                ).start()
+
+            for placa, (x1, y1, x2, y2) in placas:
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 217, 255), 3)
+                cv2.putText(frame, placa, (x1, y1 - 15),
+                           cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 217, 255), 3)
+
             if time.time() - tiempo_limpieza > 5:
                 placas_procesadas.clear()
                 tiempo_limpieza = time.time()
-            
-            # Codificar frame a JPEG
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, STREAM_JPEG_QUALITY])
+            if not ret:
+                continue
             frame_bytes = buffer.tobytes()
-            
-            # Yield como MJPEG
+
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n'
-                   b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n\r\n' 
+                   b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n\r\n'
                    + frame_bytes + b'\r\n')
-            
+
         except GeneratorExit:
-            # Cuando el cliente desconecta
-            print("🔌 Cliente desconectó del stream")
+            print("Cliente desconectado del stream")
             break
         except Exception as e:
             print(f"Error en generar_frames: {e}")
             time.sleep(0.1)
-            # Reiniciar cámara si hubo error
             if cap is None and not camera_stop_requested:
                 iniciar_camara_streaming()
             continue
-    
-    # Al terminar el generador, detener la cámara
+
     detener_camara_streaming()
 
 @require_http_methods(["GET"])
@@ -301,13 +318,8 @@ def video_feed(request):
 @require_http_methods(["POST"])
 @csrf_exempt
 def iniciar_streaming(request):
-    """Inicia el streaming de cámara"""
-    try:
-        if not iniciar_camara_streaming():
-            return JsonResponse({'error': 'No se pudo abrir la camara'}, status=503)
-        return JsonResponse({'status': 'streaming'})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    """Mantiene compatibilidad sin abrir la camara antes del stream."""
+    return JsonResponse({'status': 'ready'})
 
 @require_http_methods(["POST"])
 @csrf_exempt
