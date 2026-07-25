@@ -561,7 +561,7 @@
         .m4 { background:linear-gradient(135deg,#e7ff00,#c6ef00); color:#10233f; } .m4::before { content:'S/'; font-size:14px; font-weight:800; background:rgba(255,255,255,.42); }
         .dash-grid { display:grid; grid-template-columns:1.25fr .75fr; gap:14px; }
         .dash-card { background:#fff; border:1px solid #e7ecf3; border-radius:12px; padding:18px; min-width:0; }
-        .activity-card { grid-column:1 / -1; overflow:hidden; }
+        .activity-card { overflow:hidden; }
         .activity-card > p { margin-bottom:0; }
         .activity-card .bar-chart { margin-top:8px; }
         .dash-card h3 { font-size:14px; margin-bottom:4px; } .dash-card p { font-size:11px; color:#718096; }
@@ -569,20 +569,19 @@
         .activity-period { color:#718096; font-size:11px; font-weight:600; white-space:nowrap; }
         .chart-legend { display:flex; align-items:center; gap:16px; color:#536477; font-size:11px; font-weight:600; }
         .chart-legend span { display:flex; align-items:center; gap:6px; }
-        .legend-dot { width:7px; height:7px; border-radius:50%; background:#bdebf4; }
-        .legend-dot.today { background:#ffd85c; box-shadow:0 0 0 3px rgba(255,216,92,.16); }
-        .bar-chart { height:206px; display:grid; grid-template-columns:34px minmax(0, 1fr); gap:10px; padding:13px 2px 0 0; }
+        .legend-dot { width:9px; height:9px; border-radius:50%; background:#1e96f2; }
+        .legend-dot.green { background:#13d993; }
+        .bar-chart { height:226px; display:grid; grid-template-columns:34px minmax(0, 1fr); gap:10px; padding:13px 2px 0 0; }
         .chart-y-axis { height:166px; display:flex; flex-direction:column; justify-content:space-between; padding-bottom:1px; color:#9aa8b8; font-size:10px; text-align:right; }
-        .chart-plot { height:166px; display:flex; align-items:stretch; gap:8px; position:relative; border-bottom:1px solid #e8eef4; background:repeating-linear-gradient(to bottom, transparent 0, transparent calc(33.33% - 1px), #edf2f6 calc(33.33% - 1px), #edf2f6 33.33%); }
-        .bar-group { flex:1; min-width:0; height:100%; display:flex; justify-content:center; align-items:flex-end; position:relative; }
-        .bar-group::after { content:attr(data-day); position:absolute; top:calc(100% + 10px); left:50%; transform:translateX(-50%); color:#7b899a; font-size:10px; font-weight:600; text-transform:capitalize; }
-        .bar { width:min(34px, 62%); min-height:0; border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#d7f3f8 0%,#bcebf3 100%); box-shadow:0 5px 12px rgba(18,136,200,.1); cursor:default; transition:height .35s ease, transform .2s ease, box-shadow .2s ease; }
-        .bar-group:hover .bar { transform:translateY(-3px); box-shadow:0 9px 16px rgba(18,136,200,.18); }
-        .bar-group.is-today .bar { background:linear-gradient(180deg,#ffe88b 0%,#ffd45c 100%); box-shadow:0 5px 12px rgba(237,177,22,.24); }
-        .bar-group::before { content:attr(data-count); position:absolute; bottom:calc(var(--bar-height) + 7px); left:50%; transform:translateX(-50%); color:#4d6276; font-size:10px; font-weight:700; opacity:0; transition:opacity .2s ease; }
-        .bar-group.has-data:hover::before, .bar-group.is-today.has-data::before { opacity:1; }
-        .bar-group.is-today::before { color:#b37a00; }
-        @media (max-width:600px) { .activity-head { align-items:flex-start; flex-direction:column; gap:8px; } .chart-legend { gap:10px; } .bar-chart { grid-template-columns:28px minmax(0,1fr); } .chart-plot { gap:3px; } .bar { width:70%; } }
+        .chart-plot { height:166px; position:relative; border-bottom:1px solid #e8eef4; background:repeating-linear-gradient(to bottom, transparent 0, transparent calc(33.33% - 1px), #edf2f6 calc(33.33% - 1px), #edf2f6 33.33%); overflow:visible; }
+        .wave-svg { width:100%; height:166px; display:block; overflow:visible; }
+        .wave-area-blue { fill:url(#areaAzul); opacity:.82; }
+        .wave-area-green { fill:url(#areaVerde); opacity:.72; }
+        .wave-line-blue, .wave-line-green { fill:none; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
+        .wave-line-blue { stroke:#1396f5; filter:drop-shadow(0 3px 5px rgba(19,150,245,.18)); }
+        .wave-line-green { stroke:#10d995; filter:drop-shadow(0 3px 5px rgba(16,217,149,.16)); }
+        .wave-labels { position:absolute; top:176px; left:0; right:0; display:flex; justify-content:space-between; color:#7b899a; font-size:10px; font-weight:600; text-transform:capitalize; pointer-events:none; }
+        @media (max-width:600px) { .activity-head { align-items:flex-start; flex-direction:column; gap:8px; } .chart-legend { gap:10px; } .bar-chart { grid-template-columns:28px minmax(0,1fr); } .wave-line { stroke-width:4; } }
         @media (max-width:600px) { .modal-grid { grid-template-columns:1fr; } .acciones-tabla { justify-content:stretch; } .boton-reporte { width:100%; } }
         .donut-wrap { display:flex; align-items:center; justify-content:center; height:170px; } .donut { width:132px; height:132px; border-radius:50%; background:conic-gradient(#0b2b51 0 38%, #1288c8 38% 68%, #40c7e7 68% 80%, #eee8dd 80% 100%); position:relative; } .donut::after { content:'EN VIVO\A Control'; white-space:pre; position:absolute; inset:27px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; text-align:center; color:#10233f; font-weight:700; font-size:14px; line-height:1.5; }
         .recent-item { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f0f2f5; font-size:13px; } .recent-dot { width:9px; height:9px; background:#19c37d; border-radius:50%; margin-right:10px; } .recent-item small { margin-left:auto; color:#718096; }
@@ -651,11 +650,21 @@
                     <article class="dash-card activity-card">
                         <div class="activity-head">
                             <div><h3>Movimientos diarios</h3><p id="periodo-movimientos">Actividad registrada durante los últimos 7 días</p></div>
-                            <div class="chart-legend"><span><i class="legend-dot today"></i>Hoy</span><span><i class="legend-dot"></i>Movimientos</span></div>
+                            <div class="chart-legend"><span><i class="legend-dot"></i>Movimientos</span></div>
                         </div>
                         <div class="bar-chart">
                             <div class="chart-y-axis" id="eje-movimientos"></div>
                             <div class="chart-plot" id="grafico-movimientos-diarios" aria-label="Gráfico de movimientos diarios"></div>
+                        </div>
+                    </article>
+                    <article class="dash-card activity-card">
+                        <div class="activity-head">
+                            <div><h3>Ingresos diarios</h3><p>Recaudacion registrada durante los ultimos 7 dias</p></div>
+                            <div class="chart-legend"><span><i class="legend-dot green"></i>Ingresos</span></div>
+                        </div>
+                        <div class="bar-chart">
+                            <div class="chart-y-axis" id="eje-ingresos"></div>
+                            <div class="chart-plot" id="grafico-ingresos-diarios" aria-label="Grafico de ingresos diarios"></div>
                         </div>
                     </article>
                     <article class="dash-card"><h3>Movimientos recientes</h3><div id="dashboard-recientes"><p>Cargando movimientos...</p></div></article>
@@ -1000,11 +1009,15 @@
                 });
                 const formatoClave = fecha => `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
                 const conteoPorDia = Object.fromEntries(dias.map(fecha => [formatoClave(fecha), 0]));
+                const ingresosPorDia = Object.fromEntries(dias.map(fecha => [formatoClave(fecha), 0]));
                 movimientos.forEach(movimiento => {
                     const partes = String(movimiento.entrada || '').split(' ')[0].split('/');
                     if (partes.length !== 3) return;
                     const clave = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                    if (clave in conteoPorDia) conteoPorDia[clave] += 1;
+                    if (clave in conteoPorDia) {
+                        conteoPorDia[clave] += 1;
+                        ingresosPorDia[clave] += parseFloat(String(movimiento.monto || 0).replace('S/', '')) || 0;
+                    }
                 });
                 const mayorConteo = Math.max(0, ...Object.values(conteoPorDia));
                 // Un margen visual evita que la barra más alta quede pegada al borde superior.
@@ -1013,16 +1026,67 @@
                 const eje = document.getElementById('eje-movimientos');
                 eje.innerHTML = [maximo, Math.ceil(maximo * 2 / 3), Math.ceil(maximo / 3), 0]
                     .map(valor => `<span>${valor}</span>`).join('');
-                grafico.innerHTML = dias.map(fecha => {
-                    const cantidad = conteoPorDia[formatoClave(fecha)];
-                    const etiqueta = fecha.toLocaleDateString('es-PE', { weekday: 'short' }).replace('.', '');
-                    const esHoy = formatoClave(fecha) === formatoClave(hoy);
-                    const altura = cantidad ? Math.max(10, Math.round((cantidad / maximo) * 100)) : 0;
-                    const barra = cantidad ? `<i class="bar" style="height:${altura}%"></i>` : '';
-                    const contador = cantidad ? cantidad : '';
-                    const clases = `bar-group${cantidad ? ' has-data' : ''}${esHoy ? ' is-today' : ''}`;
-                    return `<div class="${clases}" data-day="${etiqueta}" data-count="${contador}" style="--bar-height:${altura}%" title="${cantidad} movimiento(s)">${barra}</div>`;
-                }).join('');
+                const ancho = 760;
+                const alto = 166;
+                const margenX = 12;
+                const margenY = 14;
+                const baseY = alto - 8;
+                const crearPuntos = (serie, maximoSerie = maximo) => dias.map((fecha, indice) => {
+                    const cantidad = serie[formatoClave(fecha)];
+                    const x = margenX + indice * ((ancho - margenX * 2) / (dias.length - 1));
+                    const y = baseY - ((cantidad / maximoSerie) * (alto - margenY * 2));
+                    return {
+                        x,
+                        y,
+                        cantidad,
+                        etiqueta: fecha.toLocaleDateString('es-PE', { weekday: 'short' }).replace('.', '')
+                    };
+                });
+                const crearCurva = puntos => puntos.reduce((path, punto, indice) => {
+                    if (indice === 0) return `M ${punto.x} ${punto.y}`;
+                    const previo = puntos[indice - 1];
+                    const control = (punto.x - previo.x) / 2;
+                    return `${path} C ${previo.x + control} ${previo.y}, ${punto.x - control} ${punto.y}, ${punto.x} ${punto.y}`;
+                }, '');
+                const crearArea = (curva, puntos) => `${curva} L ${puntos[puntos.length - 1].x} ${baseY} L ${puntos[0].x} ${baseY} Z`;
+                const maximoIngresos = Math.max(3, Math.ceil(Math.max(0, ...Object.values(ingresosPorDia)) / 3) * 3);
+                const puntosAzules = crearPuntos(conteoPorDia);
+                const puntosVerdes = crearPuntos(ingresosPorDia, maximoIngresos);
+                const curvaAzul = crearCurva(puntosAzules);
+                const curvaVerde = crearCurva(puntosVerdes);
+                const etiquetas = puntosAzules.map(punto => `<span>${punto.etiqueta}</span>`).join('');
+                grafico.innerHTML = `
+                    <svg class="wave-svg" viewBox="0 0 ${ancho} ${alto}" preserveAspectRatio="none" role="img" aria-label="Grafico ondulado de movimientos diarios">
+                        <defs>
+                            <linearGradient id="areaAzul" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#35aaf7" stop-opacity=".46"></stop>
+                                <stop offset="62%" stop-color="#86ccfb" stop-opacity=".26"></stop>
+                                <stop offset="100%" stop-color="#dff2ff" stop-opacity=".05"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="wave-area-blue" d="${crearArea(curvaAzul, puntosAzules)}"></path>
+                        <path class="wave-line-blue" d="${curvaAzul}"></path>
+                    </svg>
+                    <div class="wave-labels">${etiquetas}</div>
+                `;
+                const graficoIngresos = document.getElementById('grafico-ingresos-diarios');
+                const ejeIngresos = document.getElementById('eje-ingresos');
+                ejeIngresos.innerHTML = [maximoIngresos, Math.ceil(maximoIngresos * 2 / 3), Math.ceil(maximoIngresos / 3), 0]
+                    .map(valor => `<span>${valor}</span>`).join('');
+                graficoIngresos.innerHTML = `
+                    <svg class="wave-svg" viewBox="0 0 ${ancho} ${alto}" preserveAspectRatio="none" role="img" aria-label="Grafico ondulado de ingresos diarios">
+                        <defs>
+                            <linearGradient id="areaVerde" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#1ee6a0" stop-opacity=".44"></stop>
+                                <stop offset="65%" stop-color="#80efc8" stop-opacity=".25"></stop>
+                                <stop offset="100%" stop-color="#e4fff4" stop-opacity=".05"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="wave-area-green" d="${crearArea(curvaVerde, puntosVerdes)}"></path>
+                        <path class="wave-line-green" d="${curvaVerde}"></path>
+                    </svg>
+                    <div class="wave-labels">${etiquetas}</div>
+                `;
                 const recientes = document.getElementById('dashboard-recientes');
                 recientes.innerHTML = movimientos.slice(0, 4).map(m => `<div class="recent-item"><i class="recent-dot"></i><strong>${m.placa || 'N/A'}</strong><small>${m.salida ? 'Finalizado' : 'Dentro'}</small></div>`).join('') || '<p>Aún no hay movimientos registrados.</p>';
             } catch (error) {
@@ -1274,10 +1338,11 @@
         async function iniciarCamara() {
             const imgStream = document.getElementById('video-stream');
             const wrapper = document.getElementById('wrapper-video');
+            const imagenVacia = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
             
             try {
                 // Limpiar cualquier stream anterior
-                imgStream.src = '';
+                imgStream.src = imagenVacia;
                 wrapper.removeAttribute('data-active');
                 await new Promise(resolve => setTimeout(resolve, 150));
                 
@@ -1305,15 +1370,19 @@
         async function detenerCamara() {
             const imgStream = document.getElementById('video-stream');
             const wrapper = document.getElementById('wrapper-video');
+            const imagenVacia = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
             
             try {
+                imgStream.src = imagenVacia;
+                wrapper.removeAttribute('data-active');
+
                 // Solicitar al servidor que detenga el streaming
                 const detenerPromise = fetch('/api/video/detener/', {
                     method: 'POST'
                 });
                 
                 // Limpiar inmediatamente
-                imgStream.src = '';
+                imgStream.src = imagenVacia;
                 wrapper.removeAttribute('data-active');
                 
                 // Esperar a que se cierre la conexión

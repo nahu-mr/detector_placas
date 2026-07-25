@@ -27,6 +27,7 @@ from .views import calcular_monto_estacionamiento
 camera_lock = threading.Lock()
 cap = None
 current_frame = None
+camera_stop_requested = False
 placas_en_proceso = {}
 notificaciones_queue = Queue()  # Cola de eventos para SSE
 placas_tiempo_entrada = {}  # Rastrear cuándo se registró cada entrada
@@ -171,19 +172,46 @@ def update_placa(request, placa):
     except (json.JSONDecodeError, AttributeError):
         return JsonResponse({'error': 'Datos inválidos'}, status=400)
 
+
 def iniciar_camara_streaming():
-    """Inicia la cámara para streaming continuo"""
-    global cap
-    if cap is None:
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        cap.set(cv2.CAP_PROP_FPS, 30)
-        print("✅ Cámara iniciada para streaming")
+    """Inicia la camara para streaming continuo con fallback de backend."""
+    global cap, camera_stop_requested
+    camera_stop_requested = False
+    if cap is not None:
+        return True
+
+    backends = (
+        (0, cv2.CAP_DSHOW),
+        (1, cv2.CAP_DSHOW),
+        (0, cv2.CAP_ANY),
+        (1, cv2.CAP_ANY),
+    )
+    for indice, backend in backends:
+        prueba = cv2.VideoCapture(indice, backend)
+        if not prueba.isOpened():
+            prueba.release()
+            continue
+
+        prueba.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        prueba.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        prueba.set(cv2.CAP_PROP_FPS, 30)
+        ret, _ = prueba.read()
+        if ret:
+            cap = prueba
+            print(f"Camara iniciada para streaming (indice {indice})")
+            return True
+
+        prueba.release()
+
+    cap = None
+    print("No se pudo iniciar la camara: no entrega imagen")
+    return False
+
 
 def detener_camara_streaming():
     """Detiene la cámara de streaming"""
-    global cap
+    global cap, camera_stop_requested
+    camera_stop_requested = True
     with camera_lock:
         if cap:
             try:
@@ -195,14 +223,14 @@ def detener_camara_streaming():
 
 def generar_frames():
     """Generador de frames para MJPEG streaming"""
-    global cap, current_frame
+    global cap, current_frame, camera_stop_requested
     
     iniciar_camara_streaming()
     
     placas_procesadas = set()
     tiempo_limpieza = time.time()
     
-    while cap is not None:  # Verificar que cap existe
+    while cap is not None and not camera_stop_requested:  # Verificar que cap existe
         try:
             with camera_lock:  # Proteger acceso a cap
                 if cap is None:  # Si se detuvo durante la lectura, salir
@@ -251,7 +279,7 @@ def generar_frames():
             print(f"Error en generar_frames: {e}")
             time.sleep(0.1)
             # Reiniciar cámara si hubo error
-            if cap is None:
+            if cap is None and not camera_stop_requested:
                 iniciar_camara_streaming()
             continue
     
@@ -275,7 +303,8 @@ def video_feed(request):
 def iniciar_streaming(request):
     """Inicia el streaming de cámara"""
     try:
-        iniciar_camara_streaming()
+        if not iniciar_camara_streaming():
+            return JsonResponse({'error': 'No se pudo abrir la camara'}, status=503)
         return JsonResponse({'status': 'streaming'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

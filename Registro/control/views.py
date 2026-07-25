@@ -6,20 +6,21 @@ import json
 from .models import Registrada, Entrada
 from math import ceil
 
-MINUTOS_GRATIS = 5
-TARIFA_BASE = 5.00
-TARIFA_MINUTO_ADICIONAL = 0.15
+MINUTOS_GRATIS = 10
+COBRO_DESDE_10_MINUTOS = 5.00
+TARIFA_HORA_ADICIONAL = 2.50
+TARIFA_MINUTO_ADICIONAL = TARIFA_HORA_ADICIONAL / 60
 
 
 def calcular_monto_estacionamiento(segundos):
-    """Calcula el cobro: menos de 5 min gratis; desde 5 min cobra base + adicional."""
+    """Calcula el cobro: 10 min gratis; desde 10 min S/ 5, luego S/ 2.50 por hora."""
     segundos = max(0, segundos)
     segundos_gratis = MINUTOS_GRATIS * 60
     if segundos < segundos_gratis:
         return 0.00
 
     minutos_adicionales = ceil((segundos - segundos_gratis) / 60)
-    return round(TARIFA_BASE + (minutos_adicionales * TARIFA_MINUTO_ADICIONAL), 2)
+    return round(COBRO_DESDE_10_MINUTOS + minutos_adicionales * TARIFA_MINUTO_ADICIONAL, 2)
 
 
 @csrf_exempt
