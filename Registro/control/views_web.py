@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
+from django.db.models import Sum
 from .models import Registrada, Entrada
 from django.utils import timezone
 import json
@@ -84,6 +85,46 @@ def get_movimientos(request):
             'monto': f"S/ {mov['monto']:.2f}" if mov['procesada'] else '-',
         })
     return JsonResponse(result, safe=False)
+
+
+@require_http_methods(["GET"])
+def get_estadisticas_dashboard(request):
+    """Datos completos para las métricas y gráficos de los últimos siete días.
+
+    Los ingresos se registran cuando un vehículo sale, por lo que se agrupan
+    por ``salida`` y no por la fecha en la que ingresó al estacionamiento.
+    Esto también evita que el gráfico dependa del límite de 50 filas de la
+    tabla de movimientos.
+    """
+    zona_horaria = timezone.get_current_timezone()
+    hoy = timezone.localdate()
+    fecha_inicial = hoy - timedelta(days=6)
+    inicio = timezone.make_aware(datetime.combine(fecha_inicial, datetime.min.time()), zona_horaria)
+    fin = inicio + timedelta(days=7)
+
+    dias = [fecha_inicial + timedelta(days=offset) for offset in range(7)]
+    movimientos_por_dia = {dia.isoformat(): 0 for dia in dias}
+    ingresos_por_dia = {dia.isoformat(): 0.0 for dia in dias}
+
+    movimientos = Entrada.objects.filter(entrada__gte=inicio, entrada__lt=fin).values('entrada')
+    for movimiento in movimientos:
+        fecha = timezone.localtime(movimiento['entrada'], zona_horaria).date().isoformat()
+        movimientos_por_dia[fecha] += 1
+
+    ingresos = Entrada.objects.filter(
+        procesada=True, salida__gte=inicio, salida__lt=fin
+    ).values('salida', 'monto')
+    for ingreso in ingresos:
+        fecha = timezone.localtime(ingreso['salida'], zona_horaria).date().isoformat()
+        ingresos_por_dia[fecha] += float(ingreso['monto'] or 0)
+
+    total_ingresos = Entrada.objects.filter(procesada=True).aggregate(total=Sum('monto'))['total'] or 0
+    return JsonResponse({
+        'fechas': [dia.isoformat() for dia in dias],
+        'movimientos_por_dia': movimientos_por_dia,
+        'ingresos_por_dia': ingresos_por_dia,
+        'total_ingresos': float(total_ingresos),
+    })
 
 @require_http_methods(["POST"])
 @csrf_exempt

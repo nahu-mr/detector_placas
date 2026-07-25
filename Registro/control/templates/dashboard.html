@@ -435,6 +435,52 @@
             background-color: #dc2626;
         }
 
+        .boton-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .boton-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        #modal-confirmacion { background: rgba(8, 25, 46, 0.64); backdrop-filter: blur(4px); }
+        #modal-confirmacion .modal-contenido {
+            border: 1px solid #e3eaf2;
+            border-radius: 16px;
+            box-shadow: 0 20px 55px rgba(7, 24, 45, 0.25);
+            max-width: 430px;
+            padding: 26px 24px;
+            text-align: center;
+        }
+        #modal-confirmacion .modal-icono {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            color: #dc2626;
+            display: grid;
+            place-items: center;
+            font-size: 24px;
+            margin: 0 auto 14px;
+            font-weight: 700;
+        }
+        #modal-confirmacion .modal-titulo {
+            margin-bottom: 8px;
+            font-size: 20px;
+        }
+        #modal-confirmacion .modal-ayuda {
+            margin: 0 0 20px;
+            font-size: 14px;
+            color: #475569;
+        }
+        #modal-confirmacion .modal-acciones {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
         /* Formularios de placas */
         #modal-agregar, #modal-editar { background:rgba(8,25,46,.58); backdrop-filter:blur(3px); }
         #modal-agregar .modal-contenido, #modal-editar .modal-contenido { border:1px solid #e3eaf2; border-radius:14px; box-shadow:0 20px 55px rgba(7,24,45,.25); max-width:620px; padding:28px; position:relative; width:620px; }
@@ -486,43 +532,83 @@
         /* Sistema de Notificaciones */
         #notificaciones-container {
             position: fixed;
-            top: 100px;
-            right: 20px;
+            top: 18px;
+            right: 18px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            max-width: 400px;
+            max-width: 390px;
+            width: min(92vw, 390px);
         }
 
         .notificacion {
-            background-color: #1e40af;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 13px 14px;
+            border-radius: 12px;
             color: white;
-            padding: 15px 20px;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.3s ease-out;
-            border-left: 4px solid #3b82f6;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+            border: 1px solid rgba(255,255,255,0.18);
+            transform: translateY(-8px);
+            opacity: 0;
+            transition: transform 0.24s ease, opacity 0.24s ease;
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(450px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        .notificacion.visible {
+            transform: translateY(0);
+            opacity: 1;
         }
 
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: 0;
-            }
+        .notificacion.hiding {
+            transform: translateY(-8px);
+            opacity: 0;
+        }
+
+        .notificacion.success {
+            background: #0f766e;
+        }
+
+        .notificacion.error {
+            background: #dc2626;
+        }
+
+        .notificacion.info {
+            background: #2563eb;
+        }
+
+        .notificacion-warning {
+            background: #d97706;
+        }
+
+        .notificacion-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            background: rgba(255,255,255,0.18);
+            font-size: 15px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .notificacion-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notificacion-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .notificacion-message {
+            font-size: 13px;
+            line-height: 1.4;
+            opacity: 0.95;
         }
 
         /* Responsive */
@@ -587,15 +673,16 @@
         .metricas { display:grid; grid-template-columns:repeat(4, minmax(145px, 1fr)); gap:12px; margin-bottom:14px; }
         .metrica { min-height:130px; padding:20px; border-radius:15px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; box-shadow:0 10px 24px rgba(16,35,63,.09); transition:transform .2s ease, box-shadow .2s ease; }
         .metrica:hover { transform:translateY(-4px); box-shadow:0 16px 30px rgba(16,35,63,.16); }
-        .metrica::before { position:absolute; right:18px; top:16px; width:42px; height:42px; border-radius:13px; display:grid; place-items:center; font-size:20px; background:rgba(255,255,255,.22); z-index:1; }
+        .metrica-icon { position:absolute; right:18px; top:16px; width:42px; height:42px; border-radius:13px; display:grid; place-items:center; background:rgba(255,255,255,.22); z-index:1; box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
+        .metrica-icon svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
         .metrica::after { content:''; position:absolute; width:125px; height:125px; border-radius:50%; right:-48px; bottom:-64px; background:rgba(255,255,255,.16); }
         .metrica span, .metrica strong { position:relative; z-index:2; }
         .metrica span { font-size:11px; font-weight:700; letter-spacing:.45px; opacity:.92; }
         .metrica strong { font-size:31px; line-height:1; letter-spacing:-.8px; }
-        .m1 { background:linear-gradient(135deg,#f5f1e9,#e8dfd0); color:#10233f; } .m1::before { content:'▣'; background:rgba(255,255,255,.56); }
-        .m2 { background:linear-gradient(135deg,#1599d6,#0876b5); color:#fff; } .m2::before { content:'↕'; }
-        .m3 { background:linear-gradient(135deg,#56d3ed,#27b2d5); color:#10233f; } .m3::before { content:'◉'; background:rgba(255,255,255,.32); }
-        .m4 { background:linear-gradient(135deg,#e7ff00,#c6ef00); color:#10233f; } .m4::before { content:'S/'; font-size:14px; font-weight:800; background:rgba(255,255,255,.42); }
+        .m1 { background:linear-gradient(135deg,#f5f1e9,#e8dfd0); color:#10233f; } .m1 .metrica-icon { background:rgba(255,255,255,.56); }
+        .m2 { background:linear-gradient(135deg,#1599d6,#0876b5); color:#fff; }
+        .m3 { background:linear-gradient(135deg,#56d3ed,#27b2d5); color:#10233f; } .m3 .metrica-icon { background:rgba(255,255,255,.32); }
+        .m4 { background:linear-gradient(135deg,#33689d,#163c62); color:#fff; } .m4 .metrica-icon { background:rgba(255,255,255,.24); }
         .dash-grid { display:grid; grid-template-columns:1.25fr .75fr; gap:14px; }
         .dash-card { background:#fff; border:1px solid #e7ecf3; border-radius:12px; padding:18px; min-width:0; }
         .activity-card { overflow:hidden; }
@@ -707,10 +794,22 @@
             </header>
             <div id="seccion-dashboard" class="seccion activa dashboard">
                 <div class="metricas">
-                    <article class="metrica m1"><span>PLACAS REGISTRADAS</span><strong id="metric-placas">--</strong></article>
-                    <article class="metrica m2"><span>MOVIMIENTOS</span><strong id="metric-movimientos">--</strong></article>
-                    <article class="metrica m3"><span>VEHÍCULOS DENTRO</span><strong id="metric-activos">--</strong></article>
-                    <article class="metrica m4"><span>INGRESOS REGISTRADOS</span><strong id="metric-ingresos">S/ --</strong></article>
+                    <article class="metrica m1">
+                        <i class="metrica-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h5M7 14h2M16 10h1M16 14h1"></path></svg></i>
+                        <span>PLACAS REGISTRADAS</span><strong id="metric-placas">--</strong>
+                    </article>
+                    <article class="metrica m2">
+                        <i class="metrica-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 7V4l-4 4 4 4V9c4.4 0 7 1.8 8.5 5.5C15.9 9.8 13.1 7 8 7Z"></path><path d="M16 17v3l4-4-4-4v3c-4.4 0-7-1.8-8.5-5.5.6 4.7 3.4 7.5 8.5 7.5Z"></path></svg></i>
+                        <span>MOVIMIENTOS</span><strong id="metric-movimientos">--</strong>
+                    </article>
+                    <article class="metrica m3">
+                        <i class="metrica-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 15.5V11l2-4h12l2 4v4.5"></path><path d="M3 15.5h18v3a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-3Z"></path><circle cx="7" cy="16" r="1.5"></circle><circle cx="17" cy="16" r="1.5"></circle><path d="M8 11h8"></path></svg></i>
+                        <span>VEHÍCULOS DENTRO</span><strong id="metric-activos">--</strong>
+                    </article>
+                    <article class="metrica m4">
+                        <i class="metrica-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M16 7.5c-.6-1.1-2-1.8-4-1.8-2.5 0-4 1.2-4 3s1.5 2.7 4 3.3 4 1.5 4 3.3-1.5 3-4 3c-2 0-3.5-.7-4.2-1.9"></path></svg></i>
+                        <span>INGRESOS REGISTRADOS</span><strong id="metric-ingresos">S/ --</strong>
+                    </article>
                 </div>
                 <div class="dash-grid">
                     <article class="dash-card activity-card">
@@ -936,10 +1035,46 @@
         </div>
     </div>
 
+    <!-- Modal de confirmación -->
+    <div id="modal-confirmacion" class="modal">
+        <div class="modal-contenido">
+            <div class="modal-icono">!</div>
+            <h2 class="modal-titulo" id="confirmacion-titulo">Confirmar acción</h2>
+            <p class="modal-ayuda" id="confirmacion-mensaje">¿Seguro que deseas continuar?</p>
+            <div class="modal-acciones">
+                <button type="button" class="boton-form boton-cancelar" onclick="cerrarConfirmacion()">Cancelar</button>
+                <button type="button" class="boton-form boton-danger" id="confirmacion-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api';
         let placasRegistradas = new Map();
         let placaOriginalEnEdicion = '';
+        let confirmacionCallback = null;
+
+        function abrirConfirmacion({ titulo, mensaje, textoConfirmar = 'Aceptar', onConfirm }) {
+            document.getElementById('confirmacion-titulo').textContent = titulo;
+            document.getElementById('confirmacion-mensaje').textContent = mensaje;
+            const botonAceptar = document.getElementById('confirmacion-aceptar');
+            botonAceptar.textContent = textoConfirmar;
+            confirmacionCallback = onConfirm;
+            document.getElementById('modal-confirmacion').classList.add('activo');
+        }
+
+        function cerrarConfirmacion() {
+            document.getElementById('modal-confirmacion').classList.remove('activo');
+            confirmacionCallback = null;
+        }
+
+        document.getElementById('confirmacion-aceptar').addEventListener('click', () => {
+            if (typeof confirmacionCallback === 'function') {
+                const callback = confirmacionCallback;
+                cerrarConfirmacion();
+                callback();
+            }
+        });
 
         // Actualizar hora y fecha
         function actualizarHora() {
@@ -1055,37 +1190,29 @@
 
         async function cargarDashboard() {
             try {
-                const [placasRes, movRes] = await Promise.all([
-                    fetch(`${API_BASE}/web/placas/`), fetch(`${API_BASE}/web/movimientos/`)
+                const [placasRes, movRes, estadisticasRes] = await Promise.all([
+                    fetch(`${API_BASE}/web/placas/`), fetch(`${API_BASE}/web/movimientos/`),
+                    fetch(`${API_BASE}/web/dashboard-estadisticas/`)
                 ]);
                 const placas = await placasRes.json();
                 const movimientos = await movRes.json();
+                const estadisticas = await estadisticasRes.json();
                 document.getElementById('metric-placas').textContent = placas.length;
                 document.getElementById('metric-movimientos').textContent = movimientos.length;
                 const activos = movimientos.filter(m => !m.salida).length;
                 document.getElementById('metric-activos').textContent = activos;
-                const total = movimientos.reduce((acum, m) => acum + (parseFloat(String(m.monto || 0).replace('S/', '')) || 0), 0);
-                document.getElementById('metric-ingresos').textContent = `S/ ${total.toFixed(2)}`;
+                document.getElementById('metric-ingresos').textContent = `S/ ${Number(estadisticas.total_ingresos || 0).toFixed(2)}`;
 
                 const hoy = new Date();
                 hoy.setHours(0, 0, 0, 0);
-                const dias = Array.from({ length: 7 }, (_, indice) => {
+                const dias = (estadisticas.fechas || Array.from({ length: 7 }, (_, indice) => {
                     const fecha = new Date(hoy);
                     fecha.setDate(hoy.getDate() - (6 - indice));
-                    return fecha;
-                });
+                    return fecha.toISOString().slice(0, 10);
+                })).map(fecha => new Date(`${fecha}T00:00:00`));
                 const formatoClave = fecha => `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
-                const conteoPorDia = Object.fromEntries(dias.map(fecha => [formatoClave(fecha), 0]));
-                const ingresosPorDia = Object.fromEntries(dias.map(fecha => [formatoClave(fecha), 0]));
-                movimientos.forEach(movimiento => {
-                    const partes = String(movimiento.entrada || '').split(' ')[0].split('/');
-                    if (partes.length !== 3) return;
-                    const clave = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                    if (clave in conteoPorDia) {
-                        conteoPorDia[clave] += 1;
-                        ingresosPorDia[clave] += parseFloat(String(movimiento.monto || 0).replace('S/', '')) || 0;
-                    }
-                });
+                const conteoPorDia = estadisticas.movimientos_por_dia || Object.fromEntries(dias.map(fecha => [formatoClave(fecha), 0]));
+                const ingresosPorDia = estadisticas.ingresos_por_dia || Object.fromEntries(dias.map(fecha => [formatoClave(fecha), 0]));
                 const mayorConteo = Math.max(0, ...Object.values(conteoPorDia));
                 // Un margen visual evita que la barra más alta quede pegada al borde superior.
                 const maximo = Math.max(3, Math.ceil(mayorConteo / 3) * 3);
@@ -1194,7 +1321,7 @@
                 });
                 
                 if (response.ok) {
-                    alert(`Placa ${placa} registrada correctamente.`);
+                    mostrarToast('success', `La placa ${placa} se registró correctamente.`, 'Placa registrada');
                     cerrarModal();
                     cargarPlacas();
                     
@@ -1205,7 +1332,7 @@
                     }
                 } else {
                     const error = await response.json();
-                    alert(`Error: ${error.error}`);
+                    mostrarToast('error', error.error || 'No se pudo registrar la placa.', 'No se pudo registrar');
                     
                     // Reiniciar cámara si estaba activa
                     if (camaraActiva) {
@@ -1214,7 +1341,7 @@
                     }
                 }
             } catch (error) {
-                alert(`Error: ${error}`);
+                mostrarToast('error', 'No se pudo completar la operación.', 'Error');
                 
                 // Reiniciar cámara si estaba activa
                 if (camaraActiva) {
@@ -1226,22 +1353,27 @@
 
         // Eliminar placa
         async function eliminarPlaca(placa) {
-            if (!confirm(`¿Está seguro de eliminar la placa ${placa}?`)) return;
-            
-            try {
-                const response = await fetch(`${API_BASE}/web/delete-placa/${placa}/`, {
-                    method: 'DELETE'
-                });
-                
-                if (response.ok) {
-                    alert(`Placa ${placa} eliminada.`);
-                    cargarPlacas();
-                } else {
-                    alert('Error al eliminar placa');
+            abrirConfirmacion({
+                titulo: 'Eliminar placa',
+                mensaje: `¿Está seguro de eliminar la placa ${placa}?`,
+                textoConfirmar: 'Eliminar',
+                onConfirm: async () => {
+                    try {
+                        const response = await fetch(`${API_BASE}/web/delete-placa/${placa}/`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            mostrarToast('success', `La placa ${placa} se eliminó correctamente.`, 'Placa eliminada');
+                            cargarPlacas();
+                        } else {
+                            mostrarToast('error', 'No se pudo eliminar la placa.', 'Error');
+                        }
+                    } catch (error) {
+                        mostrarToast('error', 'No se pudo completar la eliminación.', 'Error');
+                    }
                 }
-            } catch (error) {
-                alert(`Error: ${error}`);
-            }
+            });
         }
 
         // Modal
@@ -1345,7 +1477,7 @@
             const placaOriginal = decodeURIComponent(placaCodificada);
             const registro = placasRegistradas.get(placaOriginal);
             if (!registro) {
-                alert('No se pudo encontrar la placa para editar.');
+                mostrarToast('error', 'No se pudo encontrar la placa para editar.', 'Error');
                 return;
             }
 
@@ -1373,7 +1505,7 @@
             const dni_propietario = document.getElementById('editar-dni-propietario').value.trim();
 
             if (!placaOriginalEnEdicion || !placa) {
-                alert('Debe ingresar una placa válida.');
+                mostrarToast('error', 'Debe ingresar una placa válida.', 'Error');
                 return;
             }
 
@@ -1389,15 +1521,15 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    alert(`Error: ${data.error || 'No se pudo actualizar la placa.'}`);
+                    mostrarToast('error', data.error || 'No se pudo actualizar la placa.', 'Error');
                     return;
                 }
 
-                alert(`Placa ${data.placa} actualizada correctamente.`);
+                mostrarToast('success', `La placa ${data.placa} se actualizó correctamente.`, 'Placa actualizada');
                 cerrarModalEditar();
                 cargarPlacas();
             } catch (error) {
-                alert(`Error al actualizar la placa: ${error}`);
+                mostrarToast('error', 'No se pudo completar la actualización.', 'Error');
             }
         }
 
@@ -1452,23 +1584,28 @@
 
         function limpiarMovimientos() {
             detenerCamara();
-            if (!confirm('¿Está seguro de eliminar todos los movimientos?')) return;
-            
-            fetch(`${API_BASE}/web/clear-movimientos/`, {
-                method: 'DELETE'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`✅ ${data.message}`);
-                    cargarMovimientos();  // Recargar la tabla
-                } else {
-                    alert('❌ Error al eliminar movimientos');
+            abrirConfirmacion({
+                titulo: 'Eliminar movimientos',
+                mensaje: '¿Está seguro de eliminar todos los movimientos?',
+                textoConfirmar: 'Eliminar todo',
+                onConfirm: () => {
+                    fetch(`${API_BASE}/web/clear-movimientos/`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            mostrarToast('success', data.message || 'Se limpiaron todos los movimientos.', 'Movimientos eliminados');
+                            cargarMovimientos();  // Recargar la tabla
+                        } else {
+                            mostrarToast('error', 'No se pudieron eliminar los movimientos.', 'Error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        mostrarToast('error', 'No se pudieron eliminar los movimientos.', 'Error');
+                    });
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('❌ Error al eliminar movimientos');
             });
         }
 
@@ -1480,59 +1617,58 @@
         }
 
         // ========== SISTEMA DE NOTIFICACIONES EN TIEMPO REAL ==========
-        function mostrarNotificacion(evento) {
+        function mostrarToast(tipo, mensaje, titulo = '') {
             const container = document.getElementById('notificaciones-container');
-            
-            let tipo = evento.tipo;
+            const config = {
+                success: { clase: 'success', icono: '✓', tituloPorDefecto: 'Listo' },
+                error: { clase: 'error', icono: '!', tituloPorDefecto: 'Error' },
+                info: { clase: 'info', icono: 'i', tituloPorDefecto: 'Información' },
+                warning: { clase: 'notificacion-warning', icono: '!' , tituloPorDefecto: 'Advertencia' }
+            };
+            const opcion = config[tipo] || config.info;
+            const notif = document.createElement('div');
+            notif.className = `notificacion ${opcion.clase}`;
+            notif.innerHTML = `
+                <div class="notificacion-icon">${opcion.icono}</div>
+                <div class="notificacion-content">
+                    <div class="notificacion-title">${titulo || opcion.tituloPorDefecto}</div>
+                    <div class="notificacion-message">${mensaje}</div>
+                </div>
+            `;
+            container.appendChild(notif);
+            requestAnimationFrame(() => notif.classList.add('visible'));
+            setTimeout(() => {
+                notif.classList.remove('visible');
+                notif.classList.add('hiding');
+                setTimeout(() => notif.remove(), 220);
+            }, 3800);
+        }
+
+        function mostrarNotificacion(evento) {
+            const tipo = evento.tipo;
             let titulo = '';
-            let color = '';
-            let icono = '';
             let mensaje = evento.mensaje || '';
             
             switch(tipo) {
                 case 'entrada':
-                    titulo = 'ENTRADA REGISTRADA';
-                    color = '#10b981';
-                    icono = '✅';
+                    titulo = 'Entrada registrada';
+                    mostrarToast('success', mensaje, titulo);
                     break;
                 case 'salida':
-                    titulo = '💰 SALIDA REGISTRADA';
-                    color = '#3b82f6';
-                    icono = '💰';
+                    titulo = 'Salida registrada';
+                    mostrarToast('info', mensaje, titulo);
                     break;
                 case 'advertencia':
-                    titulo = '⚠️ ADVERTENCIA';
-                    color = '#f59e0b';
-                    icono = '⚠️';
+                    titulo = 'Advertencia';
+                    mostrarToast('warning', mensaje, titulo);
                     break;
                 case 'error':
-                    titulo = '❌ ERROR';
-                    color = '#ef4444';
-                    icono = '❌';
+                    titulo = 'Error';
+                    mostrarToast('error', mensaje, titulo);
                     break;
                 default:
                     return;
             }
-            
-            const notif = document.createElement('div');
-            notif.className = 'notificacion';
-            notif.style.backgroundColor = color;
-            notif.innerHTML = `
-                <div style="color: white; font-weight: bold; margin-bottom: 8px; font-size: 14px;">
-                    ${titulo}
-                </div>
-                <div style="color: white; font-size: 13px; white-space: pre-wrap; line-height: 1.4;">
-                    ${mensaje}
-                </div>
-            `;
-            
-            container.appendChild(notif);
-            
-            // Auto-remover después de 5 segundos
-            setTimeout(() => {
-                notif.style.animation = 'fadeOut 0.5s ease-out';
-                setTimeout(() => notif.remove(), 500);
-            }, 5000);
         }
 
         // Conectar a SSE para notificaciones en tiempo real

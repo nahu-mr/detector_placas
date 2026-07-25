@@ -8,7 +8,7 @@ from .views import (
     listar_movimientos
 )
 from .views_web import (
-    dashboard, get_placas, get_movimientos, add_placa, delete_placa, update_placa,
+    dashboard, get_placas, get_movimientos, get_estadisticas_dashboard, add_placa, delete_placa, update_placa,
     video_feed, iniciar_streaming, detener_streaming, notificaciones_stream, clear_movimientos,
     exportar_reporte_movimientos
 )
@@ -25,6 +25,7 @@ urlpatterns = [
     path("", login_required(dashboard), name="dashboard"),
     path("api/web/placas/", login_required(get_placas), name="api_placas"),
     path("api/web/movimientos/", login_required(get_movimientos), name="api_movimientos"),
+    path("api/web/dashboard-estadisticas/", login_required(get_estadisticas_dashboard), name="api_dashboard_estadisticas"),
     path("api/web/add-placa/", login_required(add_placa), name="add_placa"),
     path("api/web/delete-placa/<str:placa>/", login_required(delete_placa), name="delete_placa_web"),
     path("api/web/update-placa/<str:placa>/", login_required(update_placa), name="update_placa_web"),
