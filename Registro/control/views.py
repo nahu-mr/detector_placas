@@ -6,7 +6,7 @@ import json
 from .models import Registrada, Entrada
 from math import ceil
 
-MINUTOS_GRATIS = 10
+MINUTOS_GRATIS = 1
 COBRO_DESDE_10_MINUTOS = 5.00
 TARIFA_HORA_ADICIONAL = 2.50
 TARIFA_MINUTO_ADICIONAL = TARIFA_HORA_ADICIONAL / 60

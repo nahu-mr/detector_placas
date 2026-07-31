@@ -6,7 +6,7 @@ from django.test import RequestFactory, TestCase
 from django.utils import timezone
 
 from .views import calcular_monto_estacionamiento
-from .views_web import get_estadisticas_dashboard
+from .views_web import get_estadisticas_dashboard, get_movimientos
 from .models import Entrada
 
 
@@ -22,6 +22,20 @@ class CalculoMontoEstacionamientoTests(TestCase):
 
 
 class EstadisticasDashboardTests(TestCase):
+    def test_vehiculos_dentro_cuenta_entradas_sin_salida(self):
+        Entrada.objects.create(
+            placa='XYZ789',
+            entrada=timezone.now(),
+            salida=None,
+            procesada=False,
+        )
+
+        request = RequestFactory().get('/api/web/dashboard-estadisticas/')
+        response = get_estadisticas_dashboard(request)
+
+        datos = json.loads(response.content)
+        self.assertEqual(datos['vehiculos_dentro'], 1)
+
     def test_ingresos_se_agregan_por_fecha_de_salida(self):
         zona_horaria = timezone.get_current_timezone()
         Entrada.objects.create(
@@ -40,3 +54,19 @@ class EstadisticasDashboardTests(TestCase):
         self.assertEqual(datos['ingresos_por_dia']['2026-07-18'], 0.0)
         self.assertEqual(datos['ingresos_por_dia']['2026-07-19'], 7.5)
         self.assertEqual(datos['ingresos_hoy'], 7.5)
+
+
+class MovimientosDashboardTests(TestCase):
+    def test_movimiento_sin_salida_se_marca_como_dentro(self):
+        Entrada.objects.create(
+            placa='XYZ789',
+            entrada=timezone.now(),
+            salida=None,
+            procesada=False,
+        )
+
+        request = RequestFactory().get('/api/web/movimientos/')
+        response = get_movimientos(request)
+
+        datos = json.loads(response.content)
+        self.assertTrue(datos[0]['dentro'])

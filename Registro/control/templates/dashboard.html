@@ -1224,7 +1224,7 @@
                 const estadisticas = await estadisticasRes.json();
                 document.getElementById('metric-placas').textContent = placas.length;
                 document.getElementById('metric-movimientos').textContent = movimientos.length;
-                const activos = movimientos.filter(m => !m.salida).length;
+                const activos = Number(estadisticas.vehiculos_dentro ?? movimientos.filter(m => m.dentro).length);
                 document.getElementById('metric-activos').textContent = activos;
                 document.getElementById('metric-ingresos').textContent = `S/ ${Number(estadisticas.total_ingresos || 0).toFixed(2)}`;
                 document.getElementById('metric-ingresos-hoy').textContent = `S/ ${Number(estadisticas.ingresos_hoy || 0).toFixed(2)}`;
@@ -1308,7 +1308,7 @@
                     <div class="wave-labels">${etiquetas}</div>
                 `;
                 const recientes = document.getElementById('dashboard-recientes');
-                recientes.innerHTML = movimientos.slice(0, 4).map(m => `<div class="recent-item"><i class="recent-dot"></i><strong>${m.placa || 'N/A'}</strong><small>${m.salida ? 'Finalizado' : 'Dentro'}</small></div>`).join('') || '<p>Aún no hay movimientos registrados.</p>';
+                recientes.innerHTML = movimientos.slice(0, 4).map(m => `<div class="recent-item"><i class="recent-dot"></i><strong>${m.placa || 'N/A'}</strong><small>${m.dentro ? 'Dentro' : 'Finalizado'}</small></div>`).join('') || '<p>Aún no hay movimientos registrados.</p>';
             } catch (error) {
                 console.error('Error cargando dashboard:', error);
             }

@@ -81,6 +81,7 @@ def get_movimientos(request):
             'propietario': propietarios.get(mov['placa'], 'Sin especificar'),
             'entrada': formatear_hora_local(mov['entrada']),
             'salida': formatear_hora_local(mov['salida']),
+            'dentro': mov['salida'] is None,
             'tiempo': f"{horas}h {minutos} min" if horas else f"{minutos} min",
             'monto': f"S/ {mov['monto']:.2f}" if mov['procesada'] else '-',
         })
@@ -119,12 +120,14 @@ def get_estadisticas_dashboard(request):
         ingresos_por_dia[fecha] += float(ingreso['monto'] or 0)
 
     total_ingresos = Entrada.objects.filter(procesada=True).aggregate(total=Sum('monto'))['total'] or 0
+    vehiculos_dentro = Entrada.objects.filter(salida__isnull=True).count()
     return JsonResponse({
         'fechas': [dia.isoformat() for dia in dias],
         'movimientos_por_dia': movimientos_por_dia,
         'ingresos_por_dia': ingresos_por_dia,
         'ingresos_hoy': ingresos_por_dia[hoy.isoformat()],
         'total_ingresos': float(total_ingresos),
+        'vehiculos_dentro': vehiculos_dentro,
     })
 
 @require_http_methods(["POST"])
